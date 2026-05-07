@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Sofie Run</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sofie Run">
+<meta name="theme-color" content="#1e361e">
+<link rel="manifest" href="data:application/json,{%22name%22:%22Sofie Run%22,%22short_name%22:%22Sofie Run%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231e361e%22,%22theme_color%22:%22%231e361e%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231e361e'/%3E%3Ccircle cx='320' cy='100' r='50' fill='%23a0c0a0'/%3E%3Cpath d='M280 145 Q220 180 200 240 L160 320 Q150 340 165 350 Q180 360 195 345 L240 270 L260 290 L220 370 L190 430 Q180 450 195 458 Q210 466 225 450 L270 370 L310 420 Q325 440 345 430 Q360 420 350 400 L300 320 L330 240 L370 290 Q388 310 408 300 Q425 290 418 270 L360 190 Q340 165 310 155 Z' fill='%23a0c0a0'/%3E%3Cpath d='M200 230 L150 210 Q130 202 125 218 Q120 234 138 242 L195 262 Z' fill='%23a0c0a0'/%3E%3C/svg%3E%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22}]}">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1643,33 +1649,4 @@ function initPlanMap(){
 async function fetchRoute(){
   if(planCoords.length<2){planPolyline.setLatLngs([]);updatePlanStats();return;}
   // Use OSRM public API — foot profile for running
-  const coords=planCoords.map(c=>`${c.lng},${c.lat}`).join(';');
-  const url=`https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`;
-  try{
-    document.getElementById('plan-dist').textContent='…';
-    const res=await fetch(url);
-    const data=await res.json();
-    if(data.code==='Ok'&&data.routes.length){
-      const route=data.routes[0];
-      const coords=route.geometry.coordinates.map(c=>[c[1],c[0]]);
-      planPolyline.setLatLngs(coords);
-      planMap.fitBounds(planPolyline.getBounds(),{padding:[20,20]});
-      const distKm=route.distance/1000;
-      document.getElementById('plan-dist').textContent=distKm.toFixed(2);
-      document.getElementById('plan-waypoints').textContent=planCoords.length;
-      document.getElementById('plan-est-time').textContent=Math.round(distKm*6)+'m';
-    } else {
-      // Fall back to straight line if routing fails
-      planPolyline.setLatLngs(planCoords);
-      updatePlanStats();
-      showToast('Road routing unavailable — showing straight line');
-    }
-  }catch(e){
-    planPolyline.setLatLngs(planCoords);
-    updatePlanStats();
-  }
-}
-
-function removePlanAt(idx){
-  planMap.removeLayer(planMarkers[idx]);
-  planMarkers.splice(idx,1);planCoords.splice(idx
+  const c
