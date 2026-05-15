@@ -1,0 +1,3032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Soflo</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Soflo">
+<meta name="theme-color" content="#1e361e">
+<link rel="apple-touch-icon" id="touch-icon" href="">
+<script>
+(function(){
+  try{
+    var c=document.createElement('canvas');
+    c.width=512;c.height=512;
+    var ctx=c.getContext('2d');
+    ctx.fillStyle='#1e361e';
+    ctx.fillRect(0,0,512,512);
+    ctx.fillStyle='#2d522d';
+    ctx.beginPath();ctx.arc(256,256,200,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#a0c0a0';
+    ctx.font='bold italic 148px Georgia,serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('Soflo',256,240);
+    ctx.fillStyle='#6fa06f';
+    ctx.beginPath();ctx.arc(256,348,14,0,Math.PI*2);ctx.fill();
+    var url=c.toDataURL('image/png');
+    document.getElementById('touch-icon').href=url;
+    var ml=document.createElement('link');
+    ml.rel='manifest';
+    ml.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify({
+      name:'Soflo',short_name:'Soflo',start_url:'.',display:'standalone',
+      background_color:'#1e361e',theme_color:'#1e361e',
+      icons:[{src:url,sizes:'512x512',type:'image/png'}]
+    }));
+    document.head.appendChild(ml);
+  }catch(e){}
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+
+
+:root{
+  --sage-50:#f4f7f4;--sage-100:#e4ede4;--sage-200:#c8dbc8;--sage-300:#a0c0a0;
+  --sage-400:#6fa06f;--sage-500:#4d7d4d;--sage-600:#3a6b3a;--sage-700:#2d522d;
+  --sage-800:#1e361e;--sage-900:#0f1f0f;
+  --cream:#faf8f3;--warm-white:#f5f3ee;--text-dark:#1a2e1a;--text-mid:#4a6a4a;
+  --gold:#c8b560;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Inter',sans-serif;background:var(--sage-900);color:var(--cream);min-height:100vh;overflow-x:hidden;overscroll-behavior:none;}
+.screen{display:none;min-height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* ── HOME ── */
+#home{background:linear-gradient(160deg,var(--sage-800) 0%,var(--sage-900) 70%);position:relative;overflow:hidden;}
+#home::before{content:'';position:absolute;top:-80px;right:-80px;width:360px;height:360px;background:radial-gradient(circle,rgba(111,160,111,0.13) 0%,transparent 70%);pointer-events:none;}
+.home-header{padding:52px 28px 12px;}
+.app-name{font-family:'DM Serif Display',serif;font-size:44px;font-weight:400;color:var(--cream);letter-spacing:-1.5px;line-height:1;font-style:italic;}
+.app-name span{color:var(--sage-300);}
+.home-subtitle{font-family:'Inter',sans-serif;font-size:12px;font-weight:400;color:var(--sage-400);margin-top:8px;letter-spacing:0.5px;text-transform:uppercase;}
+
+.garmin-banner{margin:18px 28px 0;background:rgba(200,181,96,0.1);border:1px solid rgba(200,181,96,0.25);border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:12px;}
+.garmin-banner-icon{font-size:22px;flex-shrink:0;}
+.garmin-banner-text{font-size:12px;color:var(--gold);line-height:1.5;}
+.garmin-banner-text strong{display:block;font-size:13px;margin-bottom:2px;}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px 28px 0;}
+.stat-card{background:rgba(255,255,255,0.05);border:1px solid rgba(200,219,200,0.1);border-radius:16px;padding:16px;}
+.stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--sage-400);text-transform:uppercase;margin-bottom:5px;}
+.stat-value{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--cream);}
+.stat-unit{font-size:11px;color:var(--sage-400);margin-left:2px;}
+
+.home-actions{padding:20px 24px 36px;display:flex;flex-direction:column;gap:10px;}
+.btn-primary{background:var(--sage-400);color:var(--cream);border:none;border-radius:14px;padding:18px 20px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:-0.2px;}
+.btn-primary:active{transform:scale(0.97);background:var(--sage-500);}
+.btn-secondary{background:rgba(255,255,255,0.07);color:var(--cream);border:1px solid rgba(200,219,200,0.15);border-radius:14px;padding:16px 20px;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:-0.2px;}
+.btn-secondary:active{transform:scale(0.97);}
+
+/* ── SHARED ── */
+.screen-header{background:var(--sage-700);padding:50px 24px 20px;color:var(--cream);}
+.screen-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;}
+.back-btn{background:none;border:none;color:var(--sage-300);font-size:13px;cursor:pointer;padding:0;margin-bottom:10px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;}
+.field-label{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;letter-spacing:0;}
+.field-input{width:100%;background:white;border:1.5px solid var(--sage-200);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--text-dark);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--sage-400);}
+.field-group{margin-bottom:18px;}
+
+/* ── PLAN ── */
+#plan{background:var(--warm-white);color:var(--text-dark);}
+#plan-map{height:46vh;width:100%;flex-shrink:0;}
+.plan-panel{padding:14px 18px;flex:1;overflow-y:auto;}
+.plan-hint{background:var(--sage-50);border:1px dashed var(--sage-300);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text-mid);text-align:center;margin-bottom:12px;line-height:1.6;}
+.plan-stats{display:flex;gap:8px;margin-bottom:12px;}
+.plan-stat-card{flex:1;background:white;border-radius:12px;padding:12px;border:1px solid var(--sage-100);text-align:center;box-shadow:0 2px 6px rgba(45,82,45,0.05);}
+.plan-stat-val{font-family:'DM Mono',monospace;font-size:19px;color:var(--sage-600);font-weight:500;}
+.plan-stat-label{font-size:10px;color:var(--text-mid);margin-top:2px;}
+.plan-actions{display:flex;gap:8px;}
+.plan-btn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;border:none;}
+.plan-btn-primary{background:var(--sage-500);color:white;}
+.plan-btn-secondary{background:white;color:var(--text-mid);border:1px solid var(--sage-200);}
+.plan-btn:active{transform:scale(0.97);}
+
+/* ── HISTORY ── */
+#history{background:var(--warm-white);color:var(--text-dark);}
+.tab-bar{display:flex;background:var(--sage-700);border-bottom:1px solid rgba(200,219,200,0.1);}
+.tab-btn{flex:1;padding:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sage-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;}
+.tab-btn.active{border-bottom-color:var(--sage-300);color:var(--cream);}
+.history-list{padding:14px 18px;flex:1;overflow-y:auto;}
+.import-bar{padding:12px 18px 0;background:var(--warm-white);}
+.import-label{display:flex;align-items:center;justify-content:center;gap:8px;background:white;border:1.5px solid var(--sage-100);border-radius:14px;padding:14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-600);box-shadow:0 1px 4px rgba(45,82,45,0.06);transition:all 0.18s;}
+.import-label:active{transform:scale(0.97);background:var(--sage-50);}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.run-card{background:white;border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid var(--sage-100);box-shadow:0 2px 8px rgba(45,82,45,0.05);}
+.run-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.run-date{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text-dark);}
+.run-badge{background:var(--sage-100);color:var(--sage-600);font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+.run-card-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.run-stat{text-align:center;}
+.run-stat-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;}
+.run-stat-label{font-size:9px;color:var(--text-mid);margin-top:1px;}
+.empty-state{text-align:center;padding:50px 32px;color:var(--text-mid);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-dark);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── EFFORTS ── */
+#efforts-list{display:none;flex:1;overflow-y:auto;background:var(--sage-50);padding:14px 18px;}
+.effort-row{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;margin-bottom:8px;background:white;border:1px solid var(--sage-100);box-shadow:0 1px 4px rgba(45,82,45,0.04);}
+.effort-row.new-pr{background:linear-gradient(135deg,rgba(77,125,77,0.08) 0%,rgba(200,219,200,0.15) 100%);border-color:var(--sage-300);}
+.effort-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--text-dark);letter-spacing:-0.2px;}
+.effort-date{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;color:var(--text-mid);margin-top:3px;}
+.effort-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--sage-600);}
+.effort-time.empty{color:var(--sage-200);font-size:18px;}
+.effort-pr-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;background:var(--sage-400);color:white;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── PACE CALC ── */
+#pace{background:var(--warm-white);color:var(--text-dark);}
+.pace-body{padding:22px;flex:1;overflow-y:auto;}
+.pace-result-card{background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;}
+.pace-result-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;}
+.pace-result-val{font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;}
+.pace-result-sub{font-size:13px;color:var(--sage-300);margin-top:6px;}
+.pace-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pace-out-card{background:white;border:1px solid var(--sage-100);border-radius:14px;padding:16px;text-align:center;}
+.pace-out-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px;}
+.pace-out-val{font-family:'DM Mono',monospace;font-size:22px;color:var(--sage-600);font-weight:500;}
+.race-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.race-btn{background:var(--sage-100);border:1.5px solid var(--sage-300);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;color:var(--sage-600);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.race-btn:active,.race-btn.selected{background:var(--sage-700);color:white;border-color:var(--sage-700);}
+.divider{height:1px;background:var(--sage-100);margin:16px 0;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;}
+
+/* ── TOAST ── */
+.metric{text-align:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 6px;border:1px solid rgba(200,219,200,0.07);}
+.metric-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1;}
+.metric-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sage-400);text-transform:uppercase;margin-top:4px;}
+.metric.large .metric-val{font-size:24px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sage-600);color:var(--cream);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;transition:transform 0.3s ease;z-index:9999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* ── PROFILE SELECTION ── */
+/* Modals */
+/* ── SHARED ── */
+.screen-header{background:var(--sage-700);padding:50px 24px 20px;color:var(--cream);}
+.screen-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;}
+.back-btn{background:none;border:none;color:var(--sage-300);font-size:13px;cursor:pointer;padding:0;margin-bottom:10px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;}
+.field-label{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;letter-spacing:0;}
+.field-input{width:100%;background:white;border:1.5px solid var(--sage-200);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--text-dark);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--sage-400);}
+.field-group{margin-bottom:18px;}
+
+/* ── PLAN ── */
+#plan{background:var(--warm-white);color:var(--text-dark);}
+#plan-map{height:46vh;width:100%;flex-shrink:0;}
+.plan-panel{padding:14px 18px;flex:1;overflow-y:auto;}
+.plan-hint{background:var(--sage-50);border:1px dashed var(--sage-300);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text-mid);text-align:center;margin-bottom:12px;line-height:1.6;}
+.plan-stats{display:flex;gap:8px;margin-bottom:12px;}
+.plan-stat-card{flex:1;background:white;border-radius:12px;padding:12px;border:1px solid var(--sage-100);text-align:center;box-shadow:0 2px 6px rgba(45,82,45,0.05);}
+.plan-stat-val{font-family:'DM Mono',monospace;font-size:19px;color:var(--sage-600);font-weight:500;}
+.plan-stat-label{font-size:10px;color:var(--text-mid);margin-top:2px;}
+.plan-actions{display:flex;gap:8px;}
+.plan-btn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;border:none;}
+.plan-btn-primary{background:var(--sage-500);color:white;}
+.plan-btn-secondary{background:white;color:var(--text-mid);border:1px solid var(--sage-200);}
+.plan-btn:active{transform:scale(0.97);}
+
+/* ── HISTORY ── */
+#history{background:var(--warm-white);color:var(--text-dark);}
+.tab-bar{display:flex;background:var(--sage-700);border-bottom:1px solid rgba(200,219,200,0.1);}
+.tab-btn{flex:1;padding:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sage-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;}
+.tab-btn.active{border-bottom-color:var(--sage-300);color:var(--cream);}
+.history-list{padding:14px 18px;flex:1;overflow-y:auto;}
+.import-bar{padding:12px 18px 0;background:var(--warm-white);}
+.import-label{display:flex;align-items:center;justify-content:center;gap:8px;background:white;border:1.5px solid var(--sage-100);border-radius:14px;padding:14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-600);box-shadow:0 1px 4px rgba(45,82,45,0.06);transition:all 0.18s;}
+.import-label:active{transform:scale(0.97);background:var(--sage-50);}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.run-card{background:white;border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid var(--sage-100);box-shadow:0 2px 8px rgba(45,82,45,0.05);}
+.run-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.run-date{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text-dark);}
+.run-badge{background:var(--sage-100);color:var(--sage-600);font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+.run-card-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.run-stat{text-align:center;}
+.run-stat-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;}
+.run-stat-label{font-size:9px;color:var(--text-mid);margin-top:1px;}
+.empty-state{text-align:center;padding:50px 32px;color:var(--text-mid);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-dark);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── EFFORTS ── */
+#efforts-list{display:none;flex:1;overflow-y:auto;background:var(--sage-50);padding:14px 18px;}
+.effort-row{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;margin-bottom:8px;background:white;border:1px solid var(--sage-100);box-shadow:0 1px 4px rgba(45,82,45,0.04);}
+.effort-row.new-pr{background:linear-gradient(135deg,rgba(77,125,77,0.08) 0%,rgba(200,219,200,0.15) 100%);border-color:var(--sage-300);}
+.effort-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--text-dark);letter-spacing:-0.2px;}
+.effort-date{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;color:var(--text-mid);margin-top:3px;}
+.effort-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--sage-600);}
+.effort-time.empty{color:var(--sage-200);font-size:18px;}
+.effort-pr-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;background:var(--sage-400);color:white;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── PACE CALC ── */
+#pace{background:var(--warm-white);color:var(--text-dark);}
+.pace-body{padding:22px;flex:1;overflow-y:auto;}
+.pace-result-card{background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;}
+.pace-result-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;}
+.pace-result-val{font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;}
+.pace-result-sub{font-size:13px;color:var(--sage-300);margin-top:6px;}
+.pace-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pace-out-card{background:white;border:1px solid var(--sage-100);border-radius:14px;padding:16px;text-align:center;}
+.pace-out-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px;}
+.pace-out-val{font-family:'DM Mono',monospace;font-size:22px;color:var(--sage-600);font-weight:500;}
+.race-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.race-btn{background:var(--sage-100);border:1.5px solid var(--sage-300);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;color:var(--sage-600);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.race-btn:active,.race-btn.selected{background:var(--sage-700);color:white;border-color:var(--sage-700);}
+.divider{height:1px;background:var(--sage-100);margin:16px 0;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;}
+
+/* ── TOAST ── */
+.metric{text-align:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 6px;border:1px solid rgba(200,219,200,0.07);}
+.metric-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1;}
+.metric-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sage-400);text-transform:uppercase;margin-top:4px;}
+.metric.large .metric-val{font-size:24px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sage-600);color:var(--cream);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;transition:transform 0.3s ease;z-index:9999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* ── PROFILE SCREEN ── */
+#profile-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--sage-900);
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 8000;
+  overflow-y: auto;
+}
+#profile-screen.hidden { display: none; }
+.ps-header { padding: 70px 24px 24px; text-align: center; }
+.ps-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 42px; color: var(--cream); }
+.ps-sub { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--sage-400); margin-top: 6px; }
+.ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 24px 24px; }
+.ps-card {
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(200,219,200,0.15);
+  border-radius: 20px;
+  padding: 28px 14px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+.ps-card:active { background: rgba(255,255,255,0.13); }
+/* Overlays */
+.ps-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,20,10,0.96);
+  z-index: 9000;
+  align-items: center; justify-content: center;
+  padding: 32px 24px;
+}
+.ps-overlay.show { display: flex; }
+.ps-modal {
+  width: 100%; max-width: 400px;
+  background: var(--sage-800);
+  border: 1px solid rgba(200,219,200,0.15);
+  border-radius: 20px;
+  padding: 28px;
+}
+
+/* ── SHARED ── */
+.screen-header{background:var(--sage-700);padding:50px 24px 20px;color:var(--cream);}
+.screen-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;}
+.back-btn{background:none;border:none;color:var(--sage-300);font-size:13px;cursor:pointer;padding:0;margin-bottom:10px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;}
+.field-label{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;letter-spacing:0;}
+.field-input{width:100%;background:white;border:1.5px solid var(--sage-200);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--text-dark);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--sage-400);}
+.field-group{margin-bottom:18px;}
+
+/* ── PLAN ── */
+#plan{background:var(--warm-white);color:var(--text-dark);}
+#plan-map{height:46vh;width:100%;flex-shrink:0;}
+.plan-panel{padding:14px 18px;flex:1;overflow-y:auto;}
+.plan-hint{background:var(--sage-50);border:1px dashed var(--sage-300);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text-mid);text-align:center;margin-bottom:12px;line-height:1.6;}
+.plan-stats{display:flex;gap:8px;margin-bottom:12px;}
+.plan-stat-card{flex:1;background:white;border-radius:12px;padding:12px;border:1px solid var(--sage-100);text-align:center;box-shadow:0 2px 6px rgba(45,82,45,0.05);}
+.plan-stat-val{font-family:'DM Mono',monospace;font-size:19px;color:var(--sage-600);font-weight:500;}
+.plan-stat-label{font-size:10px;color:var(--text-mid);margin-top:2px;}
+.plan-actions{display:flex;gap:8px;}
+.plan-btn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;border:none;}
+.plan-btn-primary{background:var(--sage-500);color:white;}
+.plan-btn-secondary{background:white;color:var(--text-mid);border:1px solid var(--sage-200);}
+.plan-btn:active{transform:scale(0.97);}
+
+/* ── HISTORY ── */
+#history{background:var(--warm-white);color:var(--text-dark);}
+.tab-bar{display:flex;background:var(--sage-700);border-bottom:1px solid rgba(200,219,200,0.1);}
+.tab-btn{flex:1;padding:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sage-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;}
+.tab-btn.active{border-bottom-color:var(--sage-300);color:var(--cream);}
+.history-list{padding:14px 18px;flex:1;overflow-y:auto;}
+.import-bar{padding:12px 18px 0;background:var(--warm-white);}
+.import-label{display:flex;align-items:center;justify-content:center;gap:8px;background:white;border:1.5px solid var(--sage-100);border-radius:14px;padding:14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-600);box-shadow:0 1px 4px rgba(45,82,45,0.06);transition:all 0.18s;}
+.import-label:active{transform:scale(0.97);background:var(--sage-50);}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.run-card{background:white;border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid var(--sage-100);box-shadow:0 2px 8px rgba(45,82,45,0.05);}
+.run-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.run-date{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text-dark);}
+.run-badge{background:var(--sage-100);color:var(--sage-600);font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+.run-card-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.run-stat{text-align:center;}
+.run-stat-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;}
+.run-stat-label{font-size:9px;color:var(--text-mid);margin-top:1px;}
+.empty-state{text-align:center;padding:50px 32px;color:var(--text-mid);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-dark);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── EFFORTS ── */
+#efforts-list{display:none;flex:1;overflow-y:auto;background:var(--sage-50);padding:14px 18px;}
+.effort-row{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;margin-bottom:8px;background:white;border:1px solid var(--sage-100);box-shadow:0 1px 4px rgba(45,82,45,0.04);}
+.effort-row.new-pr{background:linear-gradient(135deg,rgba(77,125,77,0.08) 0%,rgba(200,219,200,0.15) 100%);border-color:var(--sage-300);}
+.effort-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--text-dark);letter-spacing:-0.2px;}
+.effort-date{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;color:var(--text-mid);margin-top:3px;}
+.effort-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--sage-600);}
+.effort-time.empty{color:var(--sage-200);font-size:18px;}
+.effort-pr-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;background:var(--sage-400);color:white;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── PACE CALC ── */
+#pace{background:var(--warm-white);color:var(--text-dark);}
+.pace-body{padding:22px;flex:1;overflow-y:auto;}
+.pace-result-card{background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;}
+.pace-result-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;}
+.pace-result-val{font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;}
+.pace-result-sub{font-size:13px;color:var(--sage-300);margin-top:6px;}
+.pace-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pace-out-card{background:white;border:1px solid var(--sage-100);border-radius:14px;padding:16px;text-align:center;}
+.pace-out-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px;}
+.pace-out-val{font-family:'DM Mono',monospace;font-size:22px;color:var(--sage-600);font-weight:500;}
+.race-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.race-btn{background:var(--sage-100);border:1.5px solid var(--sage-300);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;color:var(--sage-600);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.race-btn:active,.race-btn.selected{background:var(--sage-700);color:white;border-color:var(--sage-700);}
+.divider{height:1px;background:var(--sage-100);margin:16px 0;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;}
+
+/* ── TOAST ── */
+.metric{text-align:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 6px;border:1px solid rgba(200,219,200,0.07);}
+.metric-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1;}
+.metric-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sage-400);text-transform:uppercase;margin-top:4px;}
+.metric.large .metric-val{font-size:24px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sage-600);color:var(--cream);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;transition:transform 0.3s ease;z-index:9999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* ── SHARED ── */
+.screen-header{background:var(--sage-700);padding:50px 24px 20px;color:var(--cream);}
+.screen-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;}
+.back-btn{background:none;border:none;color:var(--sage-300);font-size:13px;cursor:pointer;padding:0;margin-bottom:10px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;}
+.field-label{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;letter-spacing:0;}
+.field-input{width:100%;background:white;border:1.5px solid var(--sage-200);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--text-dark);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--sage-400);}
+.field-group{margin-bottom:18px;}
+
+/* ── PLAN ── */
+#plan{background:var(--warm-white);color:var(--text-dark);}
+#plan-map{height:46vh;width:100%;flex-shrink:0;}
+.plan-panel{padding:14px 18px;flex:1;overflow-y:auto;}
+.plan-hint{background:var(--sage-50);border:1px dashed var(--sage-300);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text-mid);text-align:center;margin-bottom:12px;line-height:1.6;}
+.plan-stats{display:flex;gap:8px;margin-bottom:12px;}
+.plan-stat-card{flex:1;background:white;border-radius:12px;padding:12px;border:1px solid var(--sage-100);text-align:center;box-shadow:0 2px 6px rgba(45,82,45,0.05);}
+.plan-stat-val{font-family:'DM Mono',monospace;font-size:19px;color:var(--sage-600);font-weight:500;}
+.plan-stat-label{font-size:10px;color:var(--text-mid);margin-top:2px;}
+.plan-actions{display:flex;gap:8px;}
+.plan-btn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;border:none;}
+.plan-btn-primary{background:var(--sage-500);color:white;}
+.plan-btn-secondary{background:white;color:var(--text-mid);border:1px solid var(--sage-200);}
+.plan-btn:active{transform:scale(0.97);}
+
+/* ── HISTORY ── */
+#history{background:var(--warm-white);color:var(--text-dark);}
+.tab-bar{display:flex;background:var(--sage-700);border-bottom:1px solid rgba(200,219,200,0.1);}
+.tab-btn{flex:1;padding:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sage-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;}
+.tab-btn.active{border-bottom-color:var(--sage-300);color:var(--cream);}
+.history-list{padding:14px 18px;flex:1;overflow-y:auto;}
+.import-bar{padding:12px 18px 0;background:var(--warm-white);}
+.import-label{display:flex;align-items:center;justify-content:center;gap:8px;background:white;border:1.5px solid var(--sage-100);border-radius:14px;padding:14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-600);box-shadow:0 1px 4px rgba(45,82,45,0.06);transition:all 0.18s;}
+.import-label:active{transform:scale(0.97);background:var(--sage-50);}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.run-card{background:white;border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid var(--sage-100);box-shadow:0 2px 8px rgba(45,82,45,0.05);}
+.run-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.run-date{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text-dark);}
+.run-badge{background:var(--sage-100);color:var(--sage-600);font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+.run-card-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.run-stat{text-align:center;}
+.run-stat-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;}
+.run-stat-label{font-size:9px;color:var(--text-mid);margin-top:1px;}
+.empty-state{text-align:center;padding:50px 32px;color:var(--text-mid);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-dark);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── EFFORTS ── */
+#efforts-list{display:none;flex:1;overflow-y:auto;background:var(--sage-50);padding:14px 18px;}
+.effort-row{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;margin-bottom:8px;background:white;border:1px solid var(--sage-100);box-shadow:0 1px 4px rgba(45,82,45,0.04);}
+.effort-row.new-pr{background:linear-gradient(135deg,rgba(77,125,77,0.08) 0%,rgba(200,219,200,0.15) 100%);border-color:var(--sage-300);}
+.effort-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--text-dark);letter-spacing:-0.2px;}
+.effort-date{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;color:var(--text-mid);margin-top:3px;}
+.effort-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--sage-600);}
+.effort-time.empty{color:var(--sage-200);font-size:18px;}
+.effort-pr-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;background:var(--sage-400);color:white;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── PACE CALC ── */
+#pace{background:var(--warm-white);color:var(--text-dark);}
+.pace-body{padding:22px;flex:1;overflow-y:auto;}
+.pace-result-card{background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;}
+.pace-result-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;}
+.pace-result-val{font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;}
+.pace-result-sub{font-size:13px;color:var(--sage-300);margin-top:6px;}
+.pace-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pace-out-card{background:white;border:1px solid var(--sage-100);border-radius:14px;padding:16px;text-align:center;}
+.pace-out-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px;}
+.pace-out-val{font-family:'DM Mono',monospace;font-size:22px;color:var(--sage-600);font-weight:500;}
+.race-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.race-btn{background:var(--sage-100);border:1.5px solid var(--sage-300);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;color:var(--sage-600);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.race-btn:active,.race-btn.selected{background:var(--sage-700);color:white;border-color:var(--sage-700);}
+.divider{height:1px;background:var(--sage-100);margin:16px 0;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;}
+
+/* ── TOAST ── */
+.metric{text-align:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 6px;border:1px solid rgba(200,219,200,0.07);}
+.metric-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1;}
+.metric-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sage-400);text-transform:uppercase;margin-top:4px;}
+.metric.large .metric-val{font-size:24px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sage-600);color:var(--cream);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;transition:transform 0.3s ease;z-index:9999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* ── SHARED ── */
+.screen-header{background:var(--sage-700);padding:50px 24px 20px;color:var(--cream);}
+.screen-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;}
+.back-btn{background:none;border:none;color:var(--sage-300);font-size:13px;cursor:pointer;padding:0;margin-bottom:10px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;}
+.field-label{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;letter-spacing:0;}
+.field-input{width:100%;background:white;border:1.5px solid var(--sage-200);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--text-dark);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--sage-400);}
+.field-group{margin-bottom:18px;}
+
+/* ── PLAN ── */
+#plan{background:var(--warm-white);color:var(--text-dark);}
+#plan-map{height:46vh;width:100%;flex-shrink:0;}
+.plan-panel{padding:14px 18px;flex:1;overflow-y:auto;}
+.plan-hint{background:var(--sage-50);border:1px dashed var(--sage-300);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text-mid);text-align:center;margin-bottom:12px;line-height:1.6;}
+.plan-stats{display:flex;gap:8px;margin-bottom:12px;}
+.plan-stat-card{flex:1;background:white;border-radius:12px;padding:12px;border:1px solid var(--sage-100);text-align:center;box-shadow:0 2px 6px rgba(45,82,45,0.05);}
+.plan-stat-val{font-family:'DM Mono',monospace;font-size:19px;color:var(--sage-600);font-weight:500;}
+.plan-stat-label{font-size:10px;color:var(--text-mid);margin-top:2px;}
+.plan-actions{display:flex;gap:8px;}
+.plan-btn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;border:none;}
+.plan-btn-primary{background:var(--sage-500);color:white;}
+.plan-btn-secondary{background:white;color:var(--text-mid);border:1px solid var(--sage-200);}
+.plan-btn:active{transform:scale(0.97);}
+
+/* ── HISTORY ── */
+#history{background:var(--warm-white);color:var(--text-dark);}
+.tab-bar{display:flex;background:var(--sage-700);border-bottom:1px solid rgba(200,219,200,0.1);}
+.tab-btn{flex:1;padding:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sage-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;}
+.tab-btn.active{border-bottom-color:var(--sage-300);color:var(--cream);}
+.history-list{padding:14px 18px;flex:1;overflow-y:auto;}
+.import-bar{padding:12px 18px 0;background:var(--warm-white);}
+.import-label{display:flex;align-items:center;justify-content:center;gap:8px;background:white;border:1.5px solid var(--sage-100);border-radius:14px;padding:14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-600);box-shadow:0 1px 4px rgba(45,82,45,0.06);transition:all 0.18s;}
+.import-label:active{transform:scale(0.97);background:var(--sage-50);}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.run-card{background:white;border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid var(--sage-100);box-shadow:0 2px 8px rgba(45,82,45,0.05);}
+.run-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.run-date{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text-dark);}
+.run-badge{background:var(--sage-100);color:var(--sage-600);font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+.run-card-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.run-stat{text-align:center;}
+.run-stat-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;}
+.run-stat-label{font-size:9px;color:var(--text-mid);margin-top:1px;}
+.empty-state{text-align:center;padding:50px 32px;color:var(--text-mid);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-dark);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── EFFORTS ── */
+#efforts-list{display:none;flex:1;overflow-y:auto;background:var(--sage-50);padding:14px 18px;}
+.effort-row{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;margin-bottom:8px;background:white;border:1px solid var(--sage-100);box-shadow:0 1px 4px rgba(45,82,45,0.04);}
+.effort-row.new-pr{background:linear-gradient(135deg,rgba(77,125,77,0.08) 0%,rgba(200,219,200,0.15) 100%);border-color:var(--sage-300);}
+.effort-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--text-dark);letter-spacing:-0.2px;}
+.effort-date{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;color:var(--text-mid);margin-top:3px;}
+.effort-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--sage-600);}
+.effort-time.empty{color:var(--sage-200);font-size:18px;}
+.effort-pr-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;background:var(--sage-400);color:white;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── PACE CALC ── */
+#pace{background:var(--warm-white);color:var(--text-dark);}
+.pace-body{padding:22px;flex:1;overflow-y:auto;}
+.pace-result-card{background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;}
+.pace-result-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;}
+.pace-result-val{font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;}
+.pace-result-sub{font-size:13px;color:var(--sage-300);margin-top:6px;}
+.pace-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pace-out-card{background:white;border:1px solid var(--sage-100);border-radius:14px;padding:16px;text-align:center;}
+.pace-out-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px;}
+.pace-out-val{font-family:'DM Mono',monospace;font-size:22px;color:var(--sage-600);font-weight:500;}
+.race-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.race-btn{background:var(--sage-100);border:1.5px solid var(--sage-300);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;color:var(--sage-600);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.race-btn:active,.race-btn.selected{background:var(--sage-700);color:white;border-color:var(--sage-700);}
+.divider{height:1px;background:var(--sage-100);margin:16px 0;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;}
+
+/* ── TOAST ── */
+.metric{text-align:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 6px;border:1px solid rgba(200,219,200,0.07);}
+.metric-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1;}
+.metric-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sage-400);text-transform:uppercase;margin-top:4px;}
+.metric.large .metric-val{font-size:24px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sage-600);color:var(--cream);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;transition:transform 0.3s ease;z-index:9999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* ── PROFILE SCREEN ── */
+#profile-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--sage-900);
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 8000;
+  overflow-y: auto;
+}
+#profile-screen.hidden { display: none; }
+.ps-header { padding: 70px 24px 24px; text-align: center; }
+.ps-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 42px; color: var(--cream); }
+.ps-sub { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--sage-400); margin-top: 6px; }
+.ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 24px 24px; }
+.ps-card {
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(200,219,200,0.15);
+  border-radius: 20px;
+  padding: 28px 14px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+.ps-card:active { background: rgba(255,255,255,0.13); }
+/* Overlays */
+.ps-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,20,10,0.96);
+  z-index: 9000;
+  align-items: center; justify-content: center;
+  padding: 32px 24px;
+}
+.ps-overlay.show { display: flex; }
+.ps-modal {
+  width: 100%; max-width: 400px;
+  background: var(--sage-800);
+  border: 1px solid rgba(200,219,200,0.15);
+  border-radius: 20px;
+  padding: 28px;
+}
+
+/* ── SHARED ── */
+.screen-header{background:var(--sage-700);padding:50px 24px 20px;color:var(--cream);}
+.screen-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;}
+.back-btn{background:none;border:none;color:var(--sage-300);font-size:13px;cursor:pointer;padding:0;margin-bottom:10px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;}
+.field-label{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;letter-spacing:0;}
+.field-input{width:100%;background:white;border:1.5px solid var(--sage-200);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--text-dark);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--sage-400);}
+.field-group{margin-bottom:18px;}
+
+/* ── PLAN ── */
+#plan{background:var(--warm-white);color:var(--text-dark);}
+#plan-map{height:46vh;width:100%;flex-shrink:0;}
+.plan-panel{padding:14px 18px;flex:1;overflow-y:auto;}
+.plan-hint{background:var(--sage-50);border:1px dashed var(--sage-300);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text-mid);text-align:center;margin-bottom:12px;line-height:1.6;}
+.plan-stats{display:flex;gap:8px;margin-bottom:12px;}
+.plan-stat-card{flex:1;background:white;border-radius:12px;padding:12px;border:1px solid var(--sage-100);text-align:center;box-shadow:0 2px 6px rgba(45,82,45,0.05);}
+.plan-stat-val{font-family:'DM Mono',monospace;font-size:19px;color:var(--sage-600);font-weight:500;}
+.plan-stat-label{font-size:10px;color:var(--text-mid);margin-top:2px;}
+.plan-actions{display:flex;gap:8px;}
+.plan-btn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;border:none;}
+.plan-btn-primary{background:var(--sage-500);color:white;}
+.plan-btn-secondary{background:white;color:var(--text-mid);border:1px solid var(--sage-200);}
+.plan-btn:active{transform:scale(0.97);}
+
+/* ── HISTORY ── */
+#history{background:var(--warm-white);color:var(--text-dark);}
+.tab-bar{display:flex;background:var(--sage-700);border-bottom:1px solid rgba(200,219,200,0.1);}
+.tab-btn{flex:1;padding:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sage-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;}
+.tab-btn.active{border-bottom-color:var(--sage-300);color:var(--cream);}
+.history-list{padding:14px 18px;flex:1;overflow-y:auto;}
+.import-bar{padding:12px 18px 0;background:var(--warm-white);}
+.import-label{display:flex;align-items:center;justify-content:center;gap:8px;background:white;border:1.5px solid var(--sage-100);border-radius:14px;padding:14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-600);box-shadow:0 1px 4px rgba(45,82,45,0.06);transition:all 0.18s;}
+.import-label:active{transform:scale(0.97);background:var(--sage-50);}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.run-card{background:white;border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid var(--sage-100);box-shadow:0 2px 8px rgba(45,82,45,0.05);}
+.run-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.run-date{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text-dark);}
+.run-badge{background:var(--sage-100);color:var(--sage-600);font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+.run-card-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.run-stat{text-align:center;}
+.run-stat-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;}
+.run-stat-label{font-size:9px;color:var(--text-mid);margin-top:1px;}
+.empty-state{text-align:center;padding:50px 32px;color:var(--text-mid);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-dark);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── EFFORTS ── */
+#efforts-list{display:none;flex:1;overflow-y:auto;background:var(--sage-50);padding:14px 18px;}
+.effort-row{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;margin-bottom:8px;background:white;border:1px solid var(--sage-100);box-shadow:0 1px 4px rgba(45,82,45,0.04);}
+.effort-row.new-pr{background:linear-gradient(135deg,rgba(77,125,77,0.08) 0%,rgba(200,219,200,0.15) 100%);border-color:var(--sage-300);}
+.effort-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--text-dark);letter-spacing:-0.2px;}
+.effort-date{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;color:var(--text-mid);margin-top:3px;}
+.effort-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--sage-600);}
+.effort-time.empty{color:var(--sage-200);font-size:18px;}
+.effort-pr-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;background:var(--sage-400);color:white;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── PACE CALC ── */
+#pace{background:var(--warm-white);color:var(--text-dark);}
+.pace-body{padding:22px;flex:1;overflow-y:auto;}
+.pace-result-card{background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;}
+.pace-result-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;}
+.pace-result-val{font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;}
+.pace-result-sub{font-size:13px;color:var(--sage-300);margin-top:6px;}
+.pace-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pace-out-card{background:white;border:1px solid var(--sage-100);border-radius:14px;padding:16px;text-align:center;}
+.pace-out-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px;}
+.pace-out-val{font-family:'DM Mono',monospace;font-size:22px;color:var(--sage-600);font-weight:500;}
+.race-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.race-btn{background:var(--sage-100);border:1.5px solid var(--sage-300);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;color:var(--sage-600);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.race-btn:active,.race-btn.selected{background:var(--sage-700);color:white;border-color:var(--sage-700);}
+.divider{height:1px;background:var(--sage-100);margin:16px 0;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;}
+
+/* ── TOAST ── */
+.metric{text-align:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 6px;border:1px solid rgba(200,219,200,0.07);}
+.metric-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1;}
+.metric-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sage-400);text-transform:uppercase;margin-top:4px;}
+.metric.large .metric-val{font-size:24px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sage-600);color:var(--cream);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;transition:transform 0.3s ease;z-index:9999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* ── PROFILES ── */
+#profiles{background:var(--sage-900);min-height:100vh;display:none;flex-direction:column;overflow-y:auto;}
+.profiles-header{padding:70px 28px 28px;text-align:center;}
+.profiles-title{font-family:'DM Serif Display',serif;font-size:42px;font-style:italic;color:var(--cream);margin-bottom:8px;}
+.profiles-sub{font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-400);}
+.profiles-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 24px 20px;}
+.profile-card{background:rgba(255,255,255,0.07);border:1.5px solid rgba(200,219,200,0.15);border-radius:20px;padding:28px 16px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:all 0.2s;position:relative;}
+.profile-card:active{transform:scale(0.96);background:rgba(255,255,255,0.12);}
+.profile-avatar{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;color:white;}
+.profile-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--cream);}
+.profile-stats{font-family:'Inter',sans-serif;font-size:11px;color:var(--sage-400);}
+.profile-delete{position:absolute;top:10px;right:10px;background:rgba(212,105,74,0.15);border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.add-profile-card{background:rgba(255,255,255,0.04);border:1.5px dashed rgba(200,219,200,0.2);border-radius:20px;padding:28px 16px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:all 0.2s;}
+.add-profile-card:active{background:rgba(255,255,255,0.08);}
+.keep-bar{padding:16px 24px 40px;display:flex;align-items:center;gap:12px;}
+.toggle-sw{width:44px;height:26px;background:rgba(255,255,255,0.15);border-radius:100px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle-sw.on{background:var(--sage-400);}
+.toggle-knob{width:22px;height:22px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+.toggle-sw.on .toggle-knob{left:20px;}
+.overlay-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;align-items:center;justify-content:center;padding:32px 24px;}
+.overlay-modal.show{display:flex;}
+
+/* ── SHARED ── */
+.screen-header{background:var(--sage-700);padding:50px 24px 20px;color:var(--cream);}
+.screen-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;}
+.back-btn{background:none;border:none;color:var(--sage-300);font-size:13px;cursor:pointer;padding:0;margin-bottom:10px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;}
+.field-label{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;letter-spacing:0;}
+.field-input{width:100%;background:white;border:1.5px solid var(--sage-200);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--text-dark);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--sage-400);}
+.field-group{margin-bottom:18px;}
+
+/* ── PLAN ── */
+#plan{background:var(--warm-white);color:var(--text-dark);}
+#plan-map{height:46vh;width:100%;flex-shrink:0;}
+.plan-panel{padding:14px 18px;flex:1;overflow-y:auto;}
+.plan-hint{background:var(--sage-50);border:1px dashed var(--sage-300);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text-mid);text-align:center;margin-bottom:12px;line-height:1.6;}
+.plan-stats{display:flex;gap:8px;margin-bottom:12px;}
+.plan-stat-card{flex:1;background:white;border-radius:12px;padding:12px;border:1px solid var(--sage-100);text-align:center;box-shadow:0 2px 6px rgba(45,82,45,0.05);}
+.plan-stat-val{font-family:'DM Mono',monospace;font-size:19px;color:var(--sage-600);font-weight:500;}
+.plan-stat-label{font-size:10px;color:var(--text-mid);margin-top:2px;}
+.plan-actions{display:flex;gap:8px;}
+.plan-btn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;border:none;}
+.plan-btn-primary{background:var(--sage-500);color:white;}
+.plan-btn-secondary{background:white;color:var(--text-mid);border:1px solid var(--sage-200);}
+.plan-btn:active{transform:scale(0.97);}
+
+/* ── HISTORY ── */
+#history{background:var(--warm-white);color:var(--text-dark);}
+.tab-bar{display:flex;background:var(--sage-700);border-bottom:1px solid rgba(200,219,200,0.1);}
+.tab-btn{flex:1;padding:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sage-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;}
+.tab-btn.active{border-bottom-color:var(--sage-300);color:var(--cream);}
+.history-list{padding:14px 18px;flex:1;overflow-y:auto;}
+.import-bar{padding:12px 18px 0;background:var(--warm-white);}
+.import-label{display:flex;align-items:center;justify-content:center;gap:8px;background:white;border:1.5px solid var(--sage-100);border-radius:14px;padding:14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;color:var(--sage-600);box-shadow:0 1px 4px rgba(45,82,45,0.06);transition:all 0.18s;}
+.import-label:active{transform:scale(0.97);background:var(--sage-50);}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.run-card{background:white;border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid var(--sage-100);box-shadow:0 2px 8px rgba(45,82,45,0.05);}
+.run-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.run-date{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text-dark);}
+.run-badge{background:var(--sage-100);color:var(--sage-600);font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+.run-card-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.run-stat{text-align:center;}
+.run-stat-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;}
+.run-stat-label{font-size:9px;color:var(--text-mid);margin-top:1px;}
+.empty-state{text-align:center;padding:50px 32px;color:var(--text-mid);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-text{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-dark);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── EFFORTS ── */
+#efforts-list{display:none;flex:1;overflow-y:auto;background:var(--sage-50);padding:14px 18px;}
+.effort-row{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;margin-bottom:8px;background:white;border:1px solid var(--sage-100);box-shadow:0 1px 4px rgba(45,82,45,0.04);}
+.effort-row.new-pr{background:linear-gradient(135deg,rgba(77,125,77,0.08) 0%,rgba(200,219,200,0.15) 100%);border-color:var(--sage-300);}
+.effort-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--text-dark);letter-spacing:-0.2px;}
+.effort-date{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;color:var(--text-mid);margin-top:3px;}
+.effort-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--sage-600);}
+.effort-time.empty{color:var(--sage-200);font-size:18px;}
+.effort-pr-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;background:var(--sage-400);color:white;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── PACE CALC ── */
+#pace{background:var(--warm-white);color:var(--text-dark);}
+.pace-body{padding:22px;flex:1;overflow-y:auto;}
+.pace-result-card{background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;}
+.pace-result-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;}
+.pace-result-val{font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;}
+.pace-result-sub{font-size:13px;color:var(--sage-300);margin-top:6px;}
+.pace-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pace-out-card{background:white;border:1px solid var(--sage-100);border-radius:14px;padding:16px;text-align:center;}
+.pace-out-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px;}
+.pace-out-val{font-family:'DM Mono',monospace;font-size:22px;color:var(--sage-600);font-weight:500;}
+.race-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.race-btn{background:var(--sage-100);border:1.5px solid var(--sage-300);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;color:var(--sage-600);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.race-btn:active,.race-btn.selected{background:var(--sage-700);color:white;border-color:var(--sage-700);}
+.divider{height:1px;background:var(--sage-100);margin:16px 0;}
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;}
+
+/* ── TOAST ── */
+.metric{text-align:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 6px;border:1px solid rgba(200,219,200,0.07);}
+.metric-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1;}
+.metric-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sage-400);text-transform:uppercase;margin-top:4px;}
+.metric.large .metric-val{font-size:24px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sage-600);color:var(--cream);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;transition:transform 0.3s ease;z-index:9999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* ── PROFILES ── */
+#profiles{background:var(--sage-900);position:relative;overflow:hidden;}
+#profiles::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(circle,rgba(111,160,111,0.1) 0%,transparent 70%);pointer-events:none;}
+.profiles-header{padding:60px 28px 24px;text-align:center;}
+.profiles-title{font-family:'DM Serif Display',serif;font-size:38px;font-style:italic;color:var(--cream);margin-bottom:6px;}
+.profiles-sub{font-family:'Inter',sans-serif;font-size:13px;color:var(--sage-400);font-weight:400;}
+.profiles-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 24px 24px;}
+.profile-card{background:rgba(255,255,255,0.06);border:1.5px solid rgba(200,219,200,0.12);border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;}
+.profile-card:active{transform:scale(0.96);background:rgba(255,255,255,0.1);}
+.profile-card.selected{border-color:var(--sage-400);background:rgba(111,160,111,0.12);}
+.profile-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:26px;font-style:italic;color:white;flex-shrink:0;}
+.profile-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--cream);letter-spacing:-0.2px;}
+.profile-stats{font-family:'Inter',sans-serif;font-size:11px;color:var(--sage-400);}
+.add-profile-btn{margin:0 24px 16px;background:rgba(255,255,255,0.04);border:1.5px dashed rgba(200,219,200,0.2);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--sage-400);transition:all 0.2s;}
+.add-profile-btn:active{background:rgba(255,255,255,0.08);}
+.keep-signed-in{padding:0 24px 32px;display:flex;align-items:center;gap:10px;}
+.toggle-switch{width:44px;height:24px;background:rgba(255,255,255,0.15);border-radius:100px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle-switch.on{background:var(--sage-400);}
+.toggle-knob{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.2s;}
+.toggle-switch.on .toggle-knob{left:22px;}
+.keep-signed-in-label{font-family:'Inter',sans-serif;font-size:13px;color:var(--sage-400);}
+/* Settings menu */
+.settings-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--cream);z-index:10;}
+.settings-dropdown{position:absolute;top:60px;right:16px;background:var(--sage-700);border:1px solid rgba(200,219,200,0.15);border-radius:14px;padding:6px;z-index:100;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+.settings-item{padding:12px 14px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--cream);cursor:pointer;border-radius:8px;display:flex;align-items:center;gap:10px;transition:background 0.15s;}
+.settings-item:active{background:rgba(255,255,255,0.1);}
+.settings-divider{height:1px;background:rgba(200,219,200,0.1);margin:4px 0;}
+/* Add profile modal */
+#add-profile-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,31,15,0.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;}
+
+
+/* ══ PROFILE SELECTION ══ */
+/* PROFILE */
+#psel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0a160a;z-index:9000;flex-direction:column;align-items:center;overflow-y:auto;padding-bottom:40px;}
+.psel-header{padding:64px 20px 16px;text-align:center;width:100%;}
+.psel-logo{font-family:'DM Serif Display',serif;font-style:italic;font-size:40px;color:#faf8f3;margin-bottom:4px;}
+.psel-who{font-family:'Inter',sans-serif;font-size:14px;color:#6fa06f;}
+.psel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 22px 16px;width:100%;max-width:460px;box-sizing:border-box;}
+.psel-card{background:rgba(255,255,255,0.07);border:1.5px solid rgba(160,192,160,0.13);border-radius:18px;padding:26px 12px 18px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent;}
+.psel-card:active{background:rgba(255,255,255,0.13);}
+.psel-av{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-style:italic;font-size:26px;color:#fff;}
+.psel-nm{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:#faf8f3;}
+.psel-km{font-family:'Inter',sans-serif;font-size:12px;color:#6fa06f;}
+.psel-del-btn{display:none;position:absolute;top:8px;left:8px;width:28px;height:28px;border-radius:8px;background:rgba(212,105,74,0.2);border:none;cursor:pointer;align-items:center;justify-content:center;}
+.psel-edit-mode .psel-del-btn{display:flex;}
+.psel-add{background:rgba(255,255,255,0.04);border:1.5px dashed rgba(160,192,160,0.2);border-radius:18px;padding:26px 12px 18px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.psel-add-ring{width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,0.04);border:2px dashed rgba(160,192,160,0.22);display:flex;align-items:center;justify-content:center;}
+.psel-add-lbl{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:#6fa06f;}
+.psel-foot{width:100%;max-width:460px;padding:4px 22px 36px;display:flex;align-items:center;justify-content:space-between;}
+.psel-edit-toggle{background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;color:#6fa06f;display:flex;align-items:center;gap:6px;padding:8px 0;}
+.psel-keep-row{display:flex;align-items:center;gap:8px;}
+.psel-tog{width:42px;height:24px;background:rgba(255,255,255,0.12);border-radius:100px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.psel-tog.on{background:#6fa06f;}
+.psel-knob{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.2s;}
+.psel-tog.on .psel-knob{left:20px;}
+.psel-keep-lbl{font-family:'Inter',sans-serif;font-size:12px;color:#6fa06f;}
+#psel-add-ov,#psel-del-ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,12,5,0.96);z-index:10000;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;}
+.psel-modal{width:100%;max-width:380px;background:#1a2e1a;border:1px solid rgba(160,192,160,0.15);border-radius:20px;padding:28px;}
+
+</style>
+</head>
+<body>
+<!-- HOME -->
+<div id="home" class="screen">
+  <div class="home-header" style="position:relative;">
+    <div class="app-name">Soflo</div>
+    <div class="home-subtitle" id="home-subtitle">Your Running Companion</div>
+    <button id="settings-btn" onclick="toggleSettings()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--cream);z-index:10;">⚙️</button>
+    <div id="settings-dropdown" style="display:none;position:absolute;top:60px;right:16px;background:var(--sage-700);border:1px solid rgba(200,219,200,0.15);border-radius:14px;padding:6px;z-index:100;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+      <div onclick="switchProfile()" style="padding:12px 14px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--cream);cursor:pointer;border-radius:8px;display:flex;align-items:center;gap:10px;">👤 Switch Profile</div>
+      <div style="height:1px;background:rgba(200,219,200,0.1);margin:4px 0;"></div>
+      <div style="padding:10px 14px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--cream);display:flex;align-items:center;gap:10px;">
+        📏 <span style="flex:1;">Units</span>
+        <button onclick="toggleUnits(event)" id="units-btn" style="background:var(--sage-600);border:none;border-radius:8px;padding:4px 10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:white;cursor:pointer;">KM</button>
+      </div>
+      <div style="height:1px;background:rgba(200,219,200,0.1);margin:4px 0;"></div>
+      <div onclick="logOut()" style="padding:12px 14px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:#d4694a;cursor:pointer;border-radius:8px;display:flex;align-items:center;gap:10px;">🚪 Log Out</div>
+    </div>
+  </div>
+
+
+
+
+
+  <div class="home-actions">
+    <button class="btn-secondary" onclick="showScreen('history')" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(200,219,200,0.13);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="7" stroke="var(--cream)" stroke-width="1.8"/>
+        <line x1="12" y1="8" x2="12" y2="12" stroke="var(--cream)" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="12" y1="12" x2="15" y2="14" stroke="var(--cream)" stroke-width="1.8" stroke-linecap="round"/>
+        <rect x="9" y="2" width="6" height="3" rx="1.5" fill="var(--cream)" opacity="0.6"/>
+        <rect x="9" y="19" width="6" height="3" rx="1.5" fill="var(--cream)" opacity="0.6"/>
+      </svg>
+      Import Garmin Run
+    </button>
+    <button class="btn-primary" onclick="showScreen('setup')">
+      ▶  Start a Run
+    </button>
+    <div style="display:flex;gap:10px;">
+      <button onclick="showScreen('pace')" style="flex:1;background:rgba(200,181,96,0.1);border:1px solid rgba(200,181,96,0.22);border-radius:18px;padding:16px 10px;cursor:pointer;transition:all 0.18s;display:flex;flex-direction:column;align-items:center;gap:8px;" ontouchstart="this.style.transform='scale(0.96)'" ontouchend="this.style.transform=''">
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="26" r="18" stroke="#c8b560" stroke-width="2.5"/>
+          <path d="M24 26 L24 12" stroke="#c8b560" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M24 26 L34 20" stroke="#a0c0a0" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="24" cy="26" r="2.5" fill="#c8b560"/>
+          <line x1="24" y1="9" x2="24" y2="7" stroke="#c8b560" stroke-width="2" stroke-linecap="round"/>
+          <line x1="35" y1="13" x2="36.5" y2="11.5" stroke="#c8b560" stroke-width="2" stroke-linecap="round"/>
+          <line x1="40" y1="24" x2="42" y2="24" stroke="#c8b560" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--sage-200);letter-spacing:-0.2px;">Pace Calculator</span>
+      </button>
+      <button onclick="showScreen('history')" style="flex:1;background:rgba(160,192,160,0.1);border:1px solid rgba(160,192,160,0.22);border-radius:18px;padding:16px 10px;cursor:pointer;transition:all 0.18s;display:flex;flex-direction:column;align-items:center;gap:8px;" ontouchstart="this.style.transform='scale(0.96)'" ontouchend="this.style.transform=''">
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="8" width="36" height="34" rx="4" stroke="#a0c0a0" stroke-width="2"/>
+          <line x1="14" y1="18" x2="34" y2="18" stroke="#a0c0a0" stroke-width="2" stroke-linecap="round"/>
+          <line x1="14" y1="26" x2="34" y2="26" stroke="#a0c0a0" stroke-width="2" stroke-linecap="round"/>
+          <line x1="14" y1="34" x2="26" y2="34" stroke="#a0c0a0" stroke-width="2" stroke-linecap="round"/>
+          <rect x="18" y="4" width="12" height="8" rx="2" fill="#a0c0a0"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--sage-200);letter-spacing:-0.2px;">Run History</span>
+      </button>
+      <button onclick="showScreen('history');setTimeout(()=>switchHistoryTab('efforts'),100)" style="flex:1;background:rgba(160,192,160,0.08);border:1px solid rgba(160,192,160,0.18);border-radius:18px;padding:16px 10px;cursor:pointer;transition:all 0.18s;display:flex;flex-direction:column;align-items:center;gap:8px;" ontouchstart="this.style.transform='scale(0.96)'" ontouchend="this.style.transform=''">
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4"  y="28" width="8" height="16" rx="2" fill="#4d7d4d"/>
+          <rect x="15" y="18" width="8" height="26" rx="2" fill="#6fa06f"/>
+          <rect x="26" y="8"  width="8" height="36" rx="2" fill="#a0c0a0"/>
+          <rect x="37" y="14" width="8" height="30" rx="2" fill="#c8dbc8"/>
+          <polyline points="8,26 19,16 30,6 41,12" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
+          <circle cx="8"  cy="26" r="2" fill="white" opacity="0.8"/>
+          <circle cx="19" cy="16" r="2" fill="white" opacity="0.8"/>
+          <circle cx="30" cy="6"  r="2" fill="white" opacity="0.8"/>
+          <circle cx="41" cy="12" r="2" fill="white" opacity="0.8"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--sage-200);letter-spacing:-0.2px;">Best Efforts</span>
+      </button>
+    </div>
+    <button onclick="showScreen('plan')" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(200,219,200,0.13);border-radius:16px;padding:17px;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.18s;color:var(--cream);">
+      <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 8 L16 4 L32 10 L44 6 L44 40 L32 44 L16 38 L4 42 Z" fill="#3a6b3a" stroke="#6fa06f" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M8 30 Q14 20 20 22 Q26 24 30 16 Q34 10 40 14" stroke="#c8dbc8" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <circle cx="8" cy="30" r="2.5" fill="#6fa06f" stroke="white" stroke-width="1"/>
+        <circle cx="40" cy="14" r="2.5" fill="#a0c0a0" stroke="white" stroke-width="1"/>
+      </svg>
+      Plan a Route
+    </button>
+    <button onclick="showScreen('training')" style="background:linear-gradient(135deg,rgba(77,125,77,0.3) 0%,rgba(58,107,58,0.3) 100%);border:1px solid rgba(160,192,160,0.3);border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:all 0.18s;" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Calendar base -->
+        <rect x="2" y="6" width="28" height="24" rx="3" fill="rgba(77,125,77,0.4)" stroke="#a0c0a0" stroke-width="1.6"/>
+        <!-- Calendar top bar -->
+        <rect x="2" y="6" width="28" height="7" rx="3" fill="#4d7d4d"/>
+        <!-- Calendar rings -->
+        <line x1="10" y1="3" x2="10" y2="9" stroke="#c8dbc8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="22" y1="3" x2="22" y2="9" stroke="#c8dbc8" stroke-width="2" stroke-linecap="round"/>
+        <!-- Week dots — training days highlighted -->
+        <circle cx="7" cy="18" r="1.8" fill="#6fa06f"/>
+        <circle cx="12" cy="18" r="1.8" fill="#c8dbc8"/>
+        <circle cx="17" cy="18" r="1.8" fill="#6fa06f"/>
+        <circle cx="22" cy="18" r="1.8" fill="#c8dbc8"/>
+        <circle cx="27" cy="18" r="1.8" fill="#6fa06f"/>
+        <!-- Progress arrow on bottom -->
+        <path d="M7 25 L14 25 L14 23 L19 26 L14 29 L14 27 L7 27 Z" fill="#a0c0a0"/>
+        <!-- Star for goal -->
+        <path d="M24 22 L25 24.5 L27.5 24.5 L25.5 26 L26.3 28.5 L24 27 L21.7 28.5 L22.5 26 L20.5 24.5 L23 24.5 Z" fill="#c8b560"/>
+      </svg>
+      <div style="text-align:left;">
+        <div style="font-family:'Inter',sans-serif;font-size:15px;font-weight:600;letter-spacing:-0.3px;color:var(--cream);">Create your training plan</div>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="setup" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+    <div class="screen-title">Set Up Your Run</div>
+  </div>
+  <div style="padding:22px;flex:1;overflow-y:auto;background:var(--warm-white);color:var(--text-dark);">
+    <div style="background:#fff8e6;border:1px solid rgba(200,181,96,0.4);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:#7a6020;line-height:1.6;">
+      ⚠️ <strong>Note:</strong> GPS tracking requires the screen to stay on. For reliable distance tracking, your Garmin watch is recommended. This mode works best for short runs with your screen active.
+    </div>
+    <div class="field-group">
+      <label class="field-label">Target Distance (km) — optional</label>
+      <input class="field-input" type="number" id="target-dist" placeholder="5.0" step="0.5" min="0.1" oninput="updatePaceDisplay()">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Target Time (minutes) — optional</label>
+      <input class="field-input" type="number" id="target-time" placeholder="30" step="1" min="1" oninput="updatePaceDisplay()">
+    </div>
+    <div style="text-align:center;padding:18px;background:var(--sage-100);border-radius:14px;">
+      <div style="font-family:'DM Mono',monospace;font-size:34px;color:var(--sage-600);font-weight:500;" id="pace-preview-val">-- : --</div>
+      <div style="font-size:11px;color:var(--text-mid);margin-top:3px;">Target pace per km</div>
+    </div>
+  </div>
+  <div style="padding:14px 22px 32px;background:var(--warm-white);">
+    <button class="btn-primary" onclick="startRun()" style="background:var(--sage-500);">▶ &nbsp;Start Running</button>
+  </div>
+</div>
+
+<!-- RUNNING -->
+<div id="running" class="screen">
+  <div id="map" style="height:38vh;width:100%;flex-shrink:0;position:relative;">
+    <div id="gps-status" style="position:absolute;top:10px;left:10px;z-index:1000;background:rgba(15,31,15,0.82);border-radius:20px;padding:5px 12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--sage-300);display:flex;align-items:center;gap:6px;backdrop-filter:blur(6px);">
+      <div id="gps-dot" style="width:7px;height:7px;border-radius:50%;background:var(--sage-500);animation:pulse 2s infinite;flex-shrink:0;"></div>
+      <span id="gps-label">Acquiring GPS…</span>
+    </div>
+  </div>
+  <div style="flex:1;background:linear-gradient(180deg,var(--sage-800) 0%,var(--sage-900) 100%);padding:14px 18px 18px;display:flex;flex-direction:column;overflow-y:auto;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+      <div class="metric large"><div class="metric-val" id="run-dist">0.00</div><div class="metric-label">km</div></div>
+      <div class="metric large"><div class="metric-val" id="run-time">00:00</div><div class="metric-label">time</div></div>
+      <div class="metric large"><div class="metric-val" id="run-cur-pace">--:--</div><div class="metric-label">curr /km</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div class="metric"><div class="metric-val" id="run-avg-pace">--:--</div><div class="metric-label">avg /km</div></div>
+      <div class="metric"><div class="metric-val" id="run-elev">0<span style="font-size:11px;color:var(--sage-400)">m</span></div><div class="metric-label">elev gain</div></div>
+    </div>
+    <div id="pace-coach" style="background:rgba(255,255,255,0.06);border:1px solid rgba(200,219,200,0.1);border-radius:14px;padding:13px 15px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+        <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--sage-400);text-transform:uppercase;">Pace Coach</span>
+        <span id="coach-cue" style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--cream);">Waiting for GPS…</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:100px;overflow:hidden;">
+        <div id="pace-bar" style="height:100%;border-radius:100px;transition:width 0.6s ease,background 0.4s;width:50%;background:var(--sage-400);"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;">
+        <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(160,192,160,0.4);">Too fast</span>
+        <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(160,192,160,0.4);">On pace ✓</span>
+        <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(160,192,160,0.4);">Too slow</span>
+      </div>
+    </div>
+    <div id="splits-section" style="display:none;margin-bottom:8px;">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--sage-400);text-transform:uppercase;margin-bottom:5px;">Kilometre Splits</div>
+      <div id="splits-list" style="display:flex;flex-direction:column;gap:3px;max-height:72px;overflow-y:auto;"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:auto;padding-top:8px;">
+      <button onclick="stopRun()" style="flex:1;background:rgba(212,105,74,0.15);color:#d4694a;border:1px solid rgba(212,105,74,0.3);border-radius:13px;padding:15px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">■ Finish</button>
+      <button id="pause-btn" onclick="togglePause()" style="flex:1.5;background:rgba(255,255,255,0.07);color:var(--cream);border:1px solid rgba(200,219,200,0.14);border-radius:13px;padding:15px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">⏸ &nbsp;Pause</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div id="summary" class="screen" style="background:linear-gradient(160deg,var(--sage-700) 0%,var(--sage-900) 100%);">
+  <div style="padding:40px 24px;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;">
+    <div style="font-family:'DM Serif Display',serif;font-size:34px;margin-bottom:4px;">Run Complete 🌿</div>
+    <div style="font-size:11px;color:var(--sage-300);margin-bottom:30px;font-family:'DM Mono',monospace;letter-spacing:1px;" id="summary-date">Today</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-bottom:20px;">
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.11);border-radius:16px;padding:18px;">
+        <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;" id="sum-dist">0.00</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-400);margin-top:5px;">km distance</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.11);border-radius:16px;padding:18px;">
+        <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;" id="sum-time">00:00</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-400);margin-top:5px;">duration</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.11);border-radius:16px;padding:18px;">
+        <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;" id="sum-pace">--:--</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-400);margin-top:5px;">avg pace/km</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.11);border-radius:16px;padding:18px;">
+        <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;" id="sum-elev">0m</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-400);margin-top:5px;">elev gain</div>
+      </div>
+    </div>
+    <div style="margin-top:auto;width:100%;display:flex;flex-direction:column;gap:10px;">
+      <button class="btn-primary" onclick="showScreen('home')" style="background:var(--sage-400);">Back to Home</button>
+      <button class="btn-secondary" onclick="showScreen('history')" style="border-color:rgba(200,219,200,0.2);">View History</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN -->
+<div id="plan" class="screen">
+  <div class="screen-header" style="background:var(--sage-600);">
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+    <div class="screen-title">Plan a Route</div>
+  </div>
+  <div id="plan-map"></div>
+  <div class="plan-panel">
+    <div class="plan-hint">📍 Tap to drop waypoints — route draws between them. Tap a marker to remove it.</div>
+    <div class="plan-stats">
+      <div class="plan-stat-card"><div class="plan-stat-val" id="plan-dist">0.00</div><div class="plan-stat-label">km planned</div></div>
+      <div class="plan-stat-card"><div class="plan-stat-val" id="plan-waypoints">0</div><div class="plan-stat-label">waypoints</div></div>
+      <div class="plan-stat-card"><div class="plan-stat-val" id="plan-est-time">--</div><div class="plan-stat-label">est. at 6/km</div></div>
+    </div>
+    <div class="plan-actions">
+      <button class="plan-btn plan-btn-secondary" onclick="undoPlanPoint()">↩ Undo</button>
+      <button class="plan-btn plan-btn-secondary" onclick="outAndBack()">↔ Out &amp; Back</button>
+      <button class="plan-btn plan-btn-primary" onclick="clearPlan()">✕ Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="history" class="screen">
+  <div class="screen-header" style="background:var(--sage-600);">
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+    <div class="screen-title">Run History</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-runs" onclick="switchHistoryTab('runs')">ALL RUNS</button>
+    <button class="tab-btn" id="tab-efforts" onclick="switchHistoryTab('efforts')">BEST EFFORTS</button>
+  </div>
+  <div class="import-bar">
+    <div style="display:flex;gap:8px;">
+      <button onclick="showManualEntry()" class="import-label" style="flex:1;flex-direction:column;gap:6px;text-align:center;border:none;">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="11" stroke="#4d7d4d" stroke-width="2"/>
+          <circle cx="16" cy="16" r="11" fill="rgba(77,125,77,0.1)"/>
+          <line x1="16" y1="10" x2="16" y2="16" stroke="#4d7d4d" stroke-width="2" stroke-linecap="round"/>
+          <line x1="16" y1="16" x2="20" y2="19" stroke="#6fa06f" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="16" cy="16" r="1.5" fill="#4d7d4d"/>
+          <rect x="11" y="3" width="10" height="4" rx="2" fill="#4d7d4d"/>
+          <rect x="11" y="25" width="10" height="4" rx="2" fill="#4d7d4d"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--text-dark);">Log from Garmin</span>
+        <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--sage-500);">Enter stats manually</span>
+      </button>
+      <button onclick="document.getElementById('photo-upload-input').click()" class="import-label" style="flex:1;flex-direction:column;gap:6px;text-align:center;border:none;">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="8" width="28" height="20" rx="3" fill="rgba(77,125,77,0.1)" stroke="#4d7d4d" stroke-width="2"/>
+          <circle cx="16" cy="18" r="5" stroke="#4d7d4d" stroke-width="2"/>
+          <circle cx="16" cy="18" r="2.5" fill="#6fa06f"/>
+          <path d="M11 8 L13 4 L19 4 L21 8" stroke="#4d7d4d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="25" cy="12" r="1.5" fill="#4d7d4d"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--text-dark);">Photo Import</span>
+        <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--sage-500);">Screenshot from Garmin</span>
+      </button>
+      <input type="file" id="photo-upload-input" accept="image/*" style="display:none;" onchange="importPhoto(this)">
+    </div>
+  </div>
+
+  <!-- Manual Entry Modal -->
+  <div id="manual-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0f1f0f;z-index:9998;overflow-y:auto;padding:40px 24px 40px;">
+    <div style="max-width:480px;margin:0 auto;">
+      <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cream);margin-bottom:4px;">Log a Run</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sage-400);letter-spacing:2px;margin-bottom:24px;">TYPE IN YOUR GARMIN STATS</div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Activity Name (optional)</label>
+        <input id="m-name" type="text" placeholder="" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Date</label>
+        <input id="m-date" type="date" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Distance (km)</label>
+        <input id="m-dist" type="number" placeholder="" step="0.01" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Total Time — type numbers only</label>
+        <input id="m-time" type="text" placeholder="h:mm:ss" maxlength="7" oninput="autoColonTime('m-time')" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;letter-spacing:2px;">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Avg Pace — type numbers only</label>
+        <input id="m-pace" type="text" placeholder="mm:ss per km" maxlength="5" oninput="autoColonPace('m-pace')" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;letter-spacing:2px;">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Avg Heart Rate (bpm)</label>
+          <input id="m-hr" type="number" placeholder="" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;">
+        </div>
+        <div>
+          <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Calories</label>
+          <input id="m-cals" type="number" placeholder="" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:28px;">
+        <label style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);margin-bottom:7px;display:block;">Elevation Gain (m)</label>
+        <input id="m-elev" type="number" placeholder="" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,219,200,0.2);border-radius:12px;padding:13px 15px;font-family:'Inter',sans-serif;font-size:16px;color:var(--cream);outline:none;">
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="hideManualEntry()" style="flex:1;background:rgba(255,255,255,0.07);color:var(--cream);border:1px solid rgba(200,219,200,0.15);border-radius:14px;padding:16px;font-family:'Inter',sans-serif;font-size:15px;cursor:pointer;">Cancel</button>
+        <button onclick="saveManualRun()" style="flex:2;background:var(--sage-400);color:var(--cream);border:none;border-radius:14px;padding:16px;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;">Save Run 🌿</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo import loading overlay -->
+  <div id="photo-loading" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,31,15,0.92);z-index:9998;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+    <div style="font-size:36px;animation:spin 1s linear infinite;">🌿</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--cream);">Reading your run…</div>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--sage-400);letter-spacing:1px;">AI is extracting your stats</div>
+  </div>
+  <div class="history-list" id="history-list"></div>
+  <div id="efforts-list"></div>
+</div>
+
+<!-- PACE CALCULATOR -->
+<div id="pace" class="screen">
+  <div class="screen-header" style="background:var(--sage-600);">
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+    <div class="screen-title">Pace Calculator</div>
+  </div>
+  <div class="pace-body">
+
+    <!-- Mode selector -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:20px;">
+      <button id="mode-btn-0" onclick="setPaceMode(0)" style="padding:10px 4px;border-radius:10px;border:none;background:var(--sage-500);color:white;font-family:'Inter',sans-serif;font-size:11px;font-weight:500;cursor:pointer;line-height:1.3;">Find<br>Pace</button>
+      <button id="mode-btn-1" onclick="setPaceMode(1)" style="padding:10px 4px;border-radius:10px;border:1px solid var(--sage-200);background:white;color:var(--text-mid);font-family:'Inter',sans-serif;font-size:11px;cursor:pointer;line-height:1.3;">Find<br>Finish Time</button>
+      <button id="mode-btn-2" onclick="setPaceMode(2)" style="padding:10px 4px;border-radius:10px;border:1px solid var(--sage-200);background:white;color:var(--text-mid);font-family:'Inter',sans-serif;font-size:11px;cursor:pointer;line-height:1.3;">Find<br>Distance</button>
+    </div>
+
+    <!-- Result card -->
+    <div style="background:var(--sage-600);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;">
+      <div id="pace-result-label" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sage-300);margin-bottom:6px;">Pace per km</div>
+      <div id="pace-result" style="font-family:'DM Serif Display',serif;font-size:52px;color:var(--cream);line-height:1;">--:--</div>
+      <div id="pace-result-sub" style="font-size:13px;color:var(--sage-300);margin-top:6px;">min:sec per km</div>
+    </div>
+
+    <!-- Race presets -->
+    <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);margin-bottom:10px;">Quick distances</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+      <button class="race-btn" onclick="setPaceRace(5)">5K</button>
+      <button class="race-btn" onclick="setPaceRace(10)">10K</button>
+      <button class="race-btn" onclick="setPaceRace(21.0975)">Half</button>
+      <button class="race-btn" onclick="setPaceRace(42.195)">Marathon</button>
+    </div>
+
+    <div style="height:1px;background:var(--sage-100);margin-bottom:18px;"></div>
+
+    <!-- Mode 0: Find Pace (know distance + time) -->
+    <div id="pace-mode-0">
+      <div class="field-group">
+        <label class="field-label">Distance (km)</label>
+        <input class="field-input" type="number" id="p0-dist" placeholder="e.g. 21.1" step="0.1" min="0.1" oninput="calcMode0()">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Finish Time (h:mm:ss)</label>
+        <input class="field-input" type="text" id="p0-time" placeholder="2:00:00" maxlength="8" oninput="autoColonTime('p0-time');calcMode0()" style="letter-spacing:2px;">
+      </div>
+    </div>
+
+    <!-- Mode 1: Find Finish Time (know distance + pace) -->
+    <div id="pace-mode-1" style="display:none;">
+      <div class="field-group">
+        <label class="field-label">Distance (km)</label>
+        <input class="field-input" type="number" id="p1-dist" placeholder="e.g. 21.1" step="0.1" min="0.1" oninput="calcMode1()">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Pace (mm:ss per km)</label>
+        <input class="field-input" type="text" id="p1-pace" placeholder="5:41" maxlength="5" oninput="autoColonPace('p1-pace');calcMode1()" style="letter-spacing:2px;">
+      </div>
+    </div>
+
+    <!-- Mode 2: Find Distance (know time + pace) -->
+    <div id="pace-mode-2" style="display:none;">
+      <div class="field-group">
+        <label class="field-label">Finish Time (h:mm:ss)</label>
+        <input class="field-input" type="text" id="p2-time" placeholder="2:00:00" maxlength="8" oninput="autoColonTime('p2-time');calcMode2()" style="letter-spacing:2px;">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Pace (mm:ss per km)</label>
+        <input class="field-input" type="text" id="p2-pace" placeholder="5:41" maxlength="5" oninput="autoColonPace('p2-pace');calcMode2()" style="letter-spacing:2px;">
+      </div>
+    </div>
+
+    <button onclick="clearPaceCalc()" style="width:100%;margin-top:8px;padding:13px;background:none;border:1px solid var(--sage-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:14px;color:var(--text-mid);cursor:pointer;">Clear</button>
+  </div>
+</div>
+
+<!-- TRAINING PLAN GENERATOR -->
+<div id="training" class="screen" style="background:var(--warm-white);color:var(--text-dark);">
+  <div class="screen-header" style="background:var(--sage-700);">
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+    <div class="screen-title">Training Plan</div>
+  </div>
+
+  <!-- Input form -->
+  <div id="training-form" style="padding:20px;flex:1;overflow-y:auto;">
+
+
+
+    <!-- Goal -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Your Goal</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="race-btn" id="goal-5k" onclick="selectGoal('5K')">5K</button>
+        <button class="race-btn" id="goal-10k" onclick="selectGoal('10K')">10K</button>
+        <button class="race-btn" id="goal-halfmarathon" onclick="selectGoal('Half Marathon')">Half Marathon</button>
+        <button class="race-btn" id="goal-marathon" onclick="selectGoal('Marathon')">Marathon</button>
+        <button class="race-btn" id="goal-custom" onclick="selectGoal('Custom')" style="grid-column:span 2;">Custom Goal</button>
+      </div>
+    </div>
+
+    <!-- Custom goal text -->
+    <div id="custom-goal-field" style="display:none;margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Describe your goal</label>
+      <input id="t-custom-goal" type="text" class="field-input" placeholder="e.g. Run 5km without stopping...">
+    </div>
+
+    <!-- Race date -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Race / Goal Date</label>
+      <input id="t-date" type="date" class="field-input" style="font-size:14px;padding:10px 14px;">
+    </div>
+
+    <!-- Experience -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Current Experience Level</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="race-btn" id="exp-beginner" onclick="selectExp('Beginner — new to running')">Beginner</button>
+        <button class="race-btn" id="exp-intermediate" onclick="selectExp('Intermediate — run occasionally')">Intermediate</button>
+        <button class="race-btn" id="exp-advanced" onclick="selectExp('Advanced — run regularly')">Advanced</button>
+      </div>
+    </div>
+
+    <!-- Training days per week -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">How many days per week can you train?</label>
+      <div style="display:flex;gap:6px;">
+        <button class="race-btn" id="days-1" onclick="selectDays('1')" style="flex:1;padding:8px 4px;text-align:center;">1</button>
+        <button class="race-btn" id="days-2" onclick="selectDays('2')" style="flex:1;padding:8px 4px;text-align:center;">2</button>
+        <button class="race-btn" id="days-3" onclick="selectDays('3')" style="flex:1;padding:8px 4px;text-align:center;">3</button>
+        <button class="race-btn" id="days-4" onclick="selectDays('4')" style="flex:1;padding:8px 4px;text-align:center;">4</button>
+        <button class="race-btn" id="days-5" onclick="selectDays('5')" style="flex:1;padding:8px 4px;text-align:center;">5</button>
+        <button class="race-btn" id="days-6" onclick="selectDays('6')" style="flex:1;padding:8px 4px;text-align:center;">6</button>
+        <button class="race-btn" id="days-7" onclick="selectDays('7')" style="flex:1;padding:8px 4px;text-align:center;">7</button>
+      </div>
+    </div>
+
+    <!-- Preferred training days -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Which days would you like to train? (select all that apply)</label>
+      <div style="display:flex;gap:5px;">
+        <button class="race-btn" id="tday-mon" onclick="toggleTrainDay('Mon')" style="flex:1;padding:8px 2px;text-align:center;font-size:12px;">Mon</button>
+        <button class="race-btn" id="tday-tue" onclick="toggleTrainDay('Tue')" style="flex:1;padding:8px 2px;text-align:center;font-size:12px;">Tue</button>
+        <button class="race-btn" id="tday-wed" onclick="toggleTrainDay('Wed')" style="flex:1;padding:8px 2px;text-align:center;font-size:12px;">Wed</button>
+        <button class="race-btn" id="tday-thu" onclick="toggleTrainDay('Thu')" style="flex:1;padding:8px 2px;text-align:center;font-size:12px;">Thu</button>
+        <button class="race-btn" id="tday-fri" onclick="toggleTrainDay('Fri')" style="flex:1;padding:8px 2px;text-align:center;font-size:12px;">Fri</button>
+        <button class="race-btn" id="tday-sat" onclick="toggleTrainDay('Sat')" style="flex:1;padding:8px 2px;text-align:center;font-size:12px;">Sat</button>
+        <button class="race-btn" id="tday-sun" onclick="toggleTrainDay('Sun')" style="flex:1;padding:8px 2px;text-align:center;font-size:12px;">Sun</button>
+      </div>
+    </div>
+
+    <!-- Long run day -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Which day would you like your long run?</label>
+      <div id="long-day-options" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--text-mid);font-style:italic;">Select your training days above first</span>
+      </div>
+    </div>
+
+    <!-- Parkrun option -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Add parkrun every Saturday? (5km)</label>
+      <div style="display:flex;gap:8px;">
+        <button class="race-btn" id="parkrun-yes" onclick="selectParkrun(true)">Yes please!</button>
+        <button class="race-btn" id="parkrun-no" onclick="selectParkrun(false)">No thanks</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-mid);margin-top:6px;line-height:1.5;">parkrun is a free weekly 5km event every Saturday morning at parks across the UK</div>
+    </div>
+
+    <!-- Current pace -->
+    <div style="margin-bottom:16px;">
+      <label class="field-label" style="color:var(--text-mid);">Current Easy Pace (mm:ss per km) — optional</label>
+      <input id="t-pace" type="text" maxlength="5" oninput="autoColonPace('t-pace')" class="field-input" style="letter-spacing:2px;" placeholder="e.g. 6:30">
+    </div>
+
+    <!-- Target time -->
+    <div style="margin-bottom:24px;">
+      <label class="field-label" style="color:var(--text-mid);">Target Finish Time — optional</label>
+      <input id="t-target" type="text" maxlength="7" oninput="autoColonTime('t-target')" class="field-input" style="letter-spacing:2px;" placeholder="e.g. 2:00:00">
+    </div>
+
+    <button onclick="generatePlan()" style="width:100%;background:var(--sage-500);color:white;border:none;border-radius:16px;padding:20px;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;cursor:pointer;">
+      ✨ Generate My Training Plan
+    </button>
+  </div>
+
+  <!-- Generated plan output -->
+  <div id="training-output" style="display:none;flex:1;overflow-y:auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text-dark);">Your Training Plan</div>
+      <button onclick="showTrainingForm()" style="background:none;border:1px solid var(--sage-200);border-radius:10px;padding:6px 12px;font-size:12px;color:var(--text-mid);cursor:pointer;">Edit</button>
+    </div>
+    <div id="plan-summary" style="background:var(--sage-600);border-radius:14px;padding:14px;margin-bottom:16px;color:var(--cream);font-size:13px;line-height:1.6;"></div>
+    <div id="plan-weeks" style="display:flex;flex-direction:column;gap:12px;"></div>
+    <button onclick="savePlan()" style="width:100%;margin-top:20px;background:var(--sage-400);color:white;border:none;border-radius:14px;padding:16px;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;">💾 Save Plan</button>
+  </div>
+
+  <!-- Loading -->
+  <div id="training-loading" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;">
+    <div style="font-size:40px;animation:spin 1.5s linear infinite;">🌿</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text-dark);">Building your plan…</div>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-mid);letter-spacing:1px;text-align:center;">AI is designing your personalised training schedule</div>
+  </div>
+</div>
+
+
+<div id="psel">
+  <div class="psel-header">
+    <div class="psel-logo">Soflo</div>
+    <div class="psel-who">Who is running today?</div>
+  </div>
+  <div id="psel-grid" class="psel-grid"></div>
+  <div class="psel-foot">
+    <button class="psel-edit-toggle" onclick="pselToggleEdit()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><polyline points="3 6 5 6 21 6" stroke="#6fa06f" stroke-width="2.2" stroke-linecap="round"/><path d="M19 6l-1 14H6L5 6" stroke="#6fa06f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="#6fa06f" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <span id="psel-edit-lbl">Edit</span>
+    </button>
+    <div class="psel-keep-row">
+      <div class="psel-tog" id="psel-keep-tog" onclick="pselToggleKeep()"><div class="psel-knob"></div></div>
+      <span class="psel-keep-lbl">Keep me signed in</span>
+    </div>
+  </div>
+</div>
+<div id="psel-add-ov">
+  <div class="psel-modal">
+    <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:26px;color:#faf8f3;margin-bottom:4px;">New Profile</div>
+    <div style="font-family:'Inter',sans-serif;font-size:13px;color:#6fa06f;margin-bottom:20px;">Enter a name to get started</div>
+    <input id="psel-name-inp" type="text" placeholder="Name" autocomplete="off" style="width:100%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(160,192,160,0.18);border-radius:12px;padding:14px 16px;font-family:'Inter',sans-serif;font-size:17px;color:#faf8f3;outline:none;margin-bottom:14px;display:block;box-sizing:border-box;">
+    <div style="display:flex;gap:10px;">
+      <button onclick="pselCloseAdd()" style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(160,192,160,0.15);border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:15px;color:#faf8f3;cursor:pointer;">Cancel</button>
+      <button onclick="pselCreate()" style="flex:2;background:#4d7d4d;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:white;cursor:pointer;">Create Profile</button>
+    </div>
+  </div>
+</div>
+<div id="psel-del-ov">
+  <div class="psel-modal" style="text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">&#9888;</div>
+    <div style="font-family:'Inter',sans-serif;font-size:17px;font-weight:700;color:#faf8f3;margin-bottom:8px;">Delete Profile?</div>
+    <div style="font-family:'Inter',sans-serif;font-size:13px;color:#a0c0a0;line-height:1.6;margin-bottom:22px;">Are you sure you want to delete <b id="psel-del-nm" style="color:#faf8f3;"></b>?<br>Running data might be lost.</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="pselCancelDel()" style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(160,192,160,0.15);border-radius:12px;padding:13px;font-family:'Inter',sans-serif;font-size:14px;color:#faf8f3;cursor:pointer;">No, Cancel</button>
+      <button onclick="pselConfirmDel()" style="flex:1;background:rgba(212,105,74,0.18);border:1px solid rgba(212,105,74,0.4);border-radius:12px;padding:13px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#d4694a;cursor:pointer;">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+<script>
+
+let runHistory=[];
+try{runHistory=JSON.parse(localStorage.getItem('sofie_runs')||'[]');}catch(e){}
+
+// Always ensure PRs are present — baked in permanently
+const BAKED_PRS=[
+  {date:'2020-12-02T09:00:00.000Z',distance:5,elapsed:1514,pace:1514/5,elevGain:0,avgHR:null,calories:null,activityName:'5K PR',splits:[],coords:[],imported:true,personalRecord:true},
+  {date:'2020-11-10T09:00:00.000Z',distance:10,elapsed:2972,pace:2972/10,elevGain:0,avgHR:null,calories:null,activityName:'10K PR',splits:[],coords:[],imported:true,personalRecord:true},
+  {date:'2020-11-13T09:00:00.000Z',distance:21.0975,elapsed:6359,pace:6359/21.0975,elevGain:0,avgHR:null,calories:null,activityName:'Half Marathon PR',splits:[],coords:[],imported:true,personalRecord:true},
+  {date:'2023-02-26T09:00:00.000Z',distance:24.43,elapsed:0,pace:0,elevGain:0,avgHR:null,calories:null,activityName:'Longest Run',splits:[],coords:[],imported:true,personalRecord:true},
+];
+BAKED_PRS.forEach(pr=>{
+  if(!runHistory.find(r=>r.personalRecord&&r.activityName===pr.activityName)){
+    runHistory.push(pr);
+  }
+});
+runHistory.sort((a,b)=>new Date(b.date)-new Date(a.date));
+try{localStorage.setItem('sofie_runs',JSON.stringify(runHistory));}catch(e){}
+
+let planMap,planPolyline,planMarkers=[],planCoords=[],planIsInit=false;
+
+// ── SCREENS ──
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  var psel=document.getElementById('psel');
+  if(psel) psel.style.display='none';
+  var t=document.getElementById(id);
+  if(t) t.classList.add('active');
+  if(id==='history'){renderHistory();switchHistoryTab('runs');}
+  if(id==='home') updateHomeStats();
+  if(id==='plan') initPlanMap();
+  if(id==='training') showTrainingForm();
+}
+
+// ── TRAINING PLAN GENERATOR ──
+let trainingGoal='', trainingExp='', trainingDays='', trainingDaysList=[], trainingLongDay='Sun', trainingParkrun=false;
+
+function selectGoal(g){
+  trainingGoal=g;
+  document.querySelectorAll('[id^="goal-"]').forEach(b=>b.classList.remove('selected'));
+  const idMap={'5K':'goal-5k','10K':'goal-10k','Half Marathon':'goal-halfmarathon','Marathon':'goal-marathon','Custom':'goal-custom'};
+  const btn=document.getElementById(idMap[g]);
+  if(btn)btn.classList.add('selected');
+  document.getElementById('custom-goal-field').style.display=g==='Custom'?'block':'none';
+}
+
+function selectExp(e){
+  trainingExp=e;
+  document.querySelectorAll('[id^="exp-"]').forEach(b=>b.classList.remove('selected'));
+  const key=e.split('—')[0].trim().toLowerCase();
+  const btn=document.getElementById('exp-'+key);
+  if(btn)btn.classList.add('selected');
+}
+
+function selectDays(d){
+  trainingDays=d;
+  document.querySelectorAll('[id^="days-"]').forEach(b=>b.classList.remove('selected'));
+  const btn=document.getElementById('days-'+d);
+  if(btn)btn.classList.add('selected');
+}
+
+function toggleTrainDay(day){
+  const btn=document.getElementById('tday-'+day.toLowerCase());
+  if(trainingDaysList.includes(day)){
+    trainingDaysList=trainingDaysList.filter(d=>d!==day);
+    if(btn)btn.classList.remove('selected');
+    if(trainingLongDay===day) trainingLongDay='';
+  } else {
+    trainingDaysList.push(day);
+    if(btn)btn.classList.add('selected');
+  }
+  updateLongDayOptions();
+}
+
+function updateLongDayOptions(){
+  const container=document.getElementById('long-day-options');
+  if(!trainingDaysList.length){
+    container.innerHTML='<span style="font-size:12px;color:var(--text-mid);font-style:italic;">Select your training days above first</span>';
+    return;
+  }
+  const allDays=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const sorted=trainingDaysList.sort((a,b)=>allDays.indexOf(a)-allDays.indexOf(b));
+  container.innerHTML=sorted.map(d=>`
+    <button class="race-btn ${trainingLongDay===d?'selected':''}" id="lday-${d.toLowerCase()}" onclick="selectLongDay('${d}')">${d}</button>
+  `).join('');
+}
+
+function selectLongDay(day){
+  trainingLongDay=day;
+  updateLongDayOptions();
+}
+
+function selectParkrun(val){
+  trainingParkrun=val;
+  document.getElementById('parkrun-yes').classList.toggle('selected',val);
+  document.getElementById('parkrun-no').classList.toggle('selected',!val);
+}
+
+function showTrainingForm(){
+  trainingGoal='';trainingExp='';trainingDays='';trainingDaysList=[];trainingLongDay='Sun';trainingParkrun=false;
+  document.querySelectorAll('.race-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('training-form').style.display='block';
+  document.getElementById('training-output').style.display='none';
+  document.getElementById('training-loading').style.display='none';
+}
+
+async function generatePlan(){
+  if(!trainingGoal){showToast('Please select a goal');return;}
+  if(!trainingExp){showToast('Please select your experience level');return;}
+  if(!trainingDays){showToast('Please select training days per week');return;}
+
+  const dateVal=document.getElementById('t-date').value;
+  const pace=document.getElementById('t-pace').value;
+  const target=document.getElementById('t-target').value;
+  const customGoal=document.getElementById('t-custom-goal').value;
+  const goalText=trainingGoal==='Custom'?customGoal:trainingGoal;
+  const level=trainingExp.split('—')[0].trim();
+  const preferredDaysStr=trainingDaysList.length?trainingDaysList.join(', '):'No preference';
+
+  let totalWeeks=12;
+  if(dateVal){
+    const today=new Date();today.setHours(0,0,0,0);
+    const race=new Date(dateVal);
+    const diff=Math.round((race-today)/(7*24*3600*1000));
+    if(diff>=4)totalWeeks=Math.min(diff,24);
+  } else {
+    const defaults={'5K':8,'10K':10,'Half Marathon':14,'Marathon':18,'Custom':10};
+    totalWeeks=defaults[trainingGoal]||10;
+  }
+
+  document.getElementById('training-form').style.display='none';
+  document.getElementById('training-output').style.display='none';
+  document.getElementById('training-loading').style.display='flex';
+
+  const prompt=`You are the Training Plan Engine and Product Logic System for a premium Runna-style running app. You are NOT a chatbot. You are a deterministic training system.
+
+RUNNER PROFILE:
+- Goal: ${goalText}
+- Race/Goal Date: ${dateVal ? new Date(dateVal).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : 'Not specified'}
+- Experience Level: ${level}
+- Training days per week: ${trainingDays}
+- Selected training days: ${preferredDaysStr}
+- Preferred long run day: ${trainingLongDay}
+- parkrun every Saturday: ${trainingParkrun ? 'YES' : 'No'}
+${pace ? '- Current easy pace: ' + pace + '/km' : ''}
+${target ? '- Target finish time: ' + target : ''}
+
+PACE SYSTEM — calculate and include all paces in min/km:
+${pace ? 'Based on easy pace ' + pace + '/km: Steady = ~15s faster. Tempo = ~30-40s faster. Intervals = ~60-90s faster. Goal pace = derive from target or goal.' : target ? 'Derive all paces from target time: ' + target : 'Estimate all paces based on ' + level + ' experience level.'}
+
+PLAN STRUCTURE — all 4 phases required:
+1. BASE: aerobic development, easy effort, build mileage
+2. BUILD: introduce tempo and threshold, increase quality
+3. PEAK: race-specific work, goal pace sessions
+4. TAPER: weeks ${totalWeeks - 1}-${totalWeeks}, reduce volume, maintain sharpness
+
+WEEKLY STRUCTURE — respect exactly ${trainingDays} days:
+- 3-4 days: 1 quality session (intervals OR tempo) + 1 easy/steady + 1 long run
+- 5+ days: 1 interval + 1 tempo + 1-2 easy runs + 1 long run
+- Sessions on these days ONLY: ${preferredDaysStr}
+- Long run on: ${trainingLongDay}
+- NEVER consecutive hard sessions
+
+PROGRESSION:
+- Max 10% mileage increase per week
+- Every 4th week = cutback (-15-25% load)
+- Rotate quality sessions — never repeat same workout two weeks running
+
+LONG RUN TARGETS by goal and experience:
+- 5K: Beginner 6-8km peak, Intermediate 8-10km, Advanced 10-12km
+- 10K: Beginner 8-12km peak, Intermediate 12-14km, Advanced 14-16km
+- Half Marathon: Beginner 14-16km peak, Intermediate 16-18km, Advanced 18-21km MAX
+- Marathon: Beginner 24-28km peak, Intermediate 28-32km, Advanced 32-35km MAX
+- Peak long run ~2-3 weeks before race day. Taper after peak.
+
+QUALITY SESSIONS — rotate between (never repeat consecutively):
+- VO2max intervals
+- Tempo/threshold runs
+- Fartlek, progression runs, hill repeats
+- Goal pace sessions (peak phase only)
+
+WORKOUT FORMAT — always show in KM with full breakdown:
+"10km total: 2km easy warm-up, 6x1km at X:XX/km with 90s jog recovery, 2km easy cool-down"
+NEVER just "6x1km". Always include total km + structure + exact paces.
+
+${trainingParkrun ? `PARKRUN SATURDAY (ENABLED — every Saturday = fixed 5.0km):
+Weeks 1-3: Easy aerobic parkrun
+Week 4: Controlled tempo parkrun
+Weeks 5-7: Progression parkrun (negative split — finish faster than start)
+Week 8: Easy cutback parkrun
+Weeks 9-11: Race pace or slightly faster
+Week 12: Relaxed sharp parkrun (taper — NOT exhausting)
+RULES: Never max effort every week. If Saturday hard: Friday must be easy, Sunday long run controlled.` : ''}
+
+Return ONLY valid JSON — no markdown, no backticks, no explanation:
+{
+  "summary": "3-4 sentences: personalised coaching overview covering periodisation phases, key sessions, and how the plan fits this specific runner",
+  "paceGuide": {
+    "easy": "X:XX/km",
+    "steady": "X:XX/km",
+    "tempo": "X:XX/km",
+    "intervals": "X:XX/km",
+    "goalPace": "X:XX/km"
+  },
+  "totalWeeks": ${totalWeeks},
+  "goal": "${goalText}",
+  "keyPrinciples": [
+    "Specific principle 1 for this runner",
+    "Specific principle 2",
+    "Specific principle 3",
+    "Specific principle 4"
+  ],
+  "weeks": [
+    {
+      "week": 1,
+      "phase": "Base",
+      "label": "Aerobic Foundation",
+      "focus": "One specific sentence about this week's coaching focus",
+      "totalKm": 28,
+      "sessions": [
+        {
+          "day": "Mon",
+          "type": "Easy Run",
+          "distance_km": 8,
+          "pace_zone": "Easy (X:XX/km)",
+          "description": "8km easy run at X:XX/km. Fully conversational throughout — if you cannot speak in full sentences, slow down. Core aerobic base session.",
+          "icon": "🏃",
+          "training_purpose": "Aerobic base development and active recovery"
+        },
+        {
+          "day": "Wed",
+          "type": "Intervals",
+          "distance_km": 10,
+          "pace_zone": "VO2max (X:XX/km)",
+          "description": "10km total: 2km easy warm-up at X:XX/km, 6x1km at X:XX/km with 90s jog recovery between each rep, 2km easy cool-down. Run each rep at the same effort — do not go out too fast.",
+          "icon": "⚡",
+          "training_purpose": "VO2max development and running economy"
+        },
+        {
+          "day": "${trainingLongDay}",
+          "type": "Long Run",
+          "distance_km": 14,
+          "pace_zone": "Easy (X:XX/km)",
+          "description": "14km easy long run at X:XX/km. This is your most important session of the week. Run the full distance at easy conversational effort. Do not rush.",
+          "icon": "🌿",
+          "training_purpose": "Endurance development and aerobic adaptation"
+        }
+      ]
+    }
+  ]
+}
+
+Icons to use: 🏃 easy/recovery run, ⚡ intervals, 🔥 tempo/threshold, 🌿 long run, 💪 strength, 🏔 hills, 🎲 fartlek, 📈 progression run, 🏅 parkrun, 😴 rest day
+Generate ALL ${totalWeeks} weeks. Every session must have specific distances and paces. Never repeat the same session description twice. Ensure long runs match the targets above for the goal and experience level.`;
+
+  try{
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:8000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+
+    if(!response.ok){throw new Error('API error: '+response.status);}
+
+    const data=await response.json();
+    const text=data.content.map(i=>i.text||'').join('');
+    const clean=text.replace(/```json|```/g,'').trim();
+    const plan=JSON.parse(clean);
+
+    renderPlan(plan);
+    localStorage.setItem('sofie_training_plan',JSON.stringify(plan));
+    document.getElementById('training-loading').style.display='none';
+    document.getElementById('training-output').style.display='block';
+
+  }catch(err){
+    console.error('Plan generation error:',err);
+    // Fall back to built-in plan
+    const days=parseInt(trainingDays);
+    const level2=trainingExp.split('—')[0].trim().toLowerCase();
+    const preferredDays=trainingDaysList.length>=days?trainingDaysList:null;
+    const plan=buildPlan(goalText,trainingGoal,level2,days,dateVal,pace,target,preferredDays,trainingLongDay,trainingParkrun);
+    renderPlan(plan);
+    localStorage.setItem('sofie_training_plan',JSON.stringify(plan));
+    document.getElementById('training-loading').style.display='none';
+    document.getElementById('training-output').style.display='block';
+    showToast('Generated using built-in plan — AI unavailable');
+  }
+}
+
+function buildPlan(goalText,goalType,level,daysPerWeek,dateVal,pace,target,preferredDays,longDay,parkrun){
+  // Calculate weeks
+  var totalWeeks=12;
+  if(dateVal){
+    var today=new Date();today.setHours(0,0,0,0);
+    var race=new Date(dateVal);
+    var diff=Math.round((race-today)/(7*24*3600*1000));
+    if(diff>=4)totalWeeks=Math.min(diff,24);
+  } else {
+    var defaults={'5K':8,'10K':10,'Half Marathon':14,'Marathon':18,'Custom':10};
+    totalWeeks=defaults[goalType]||10;
+  }
+
+  // Calculate paces
+  var paces=calcPaces(pace,target,goalType,level);
+
+  // Build phases
+  var phases=buildPhases(totalWeeks);
+
+  // Peak long run targets
+  var peakLongRun=getPeakLongRun(goalType,level);
+
+  // Build weeks
+  var weeks=[];
+  for(var w=1;w<=totalWeeks;w++){
+    var phase=getPhase(phases,w);
+    var isCutback=(w%4===0);
+    var weekSessions=buildWeekSessions(w,totalWeeks,phase,isCutback,daysPerWeek,
+      preferredDays,longDay,parkrun,goalType,level,paces,peakLongRun);
+    var totalKm=weekSessions.reduce(function(s,sess){return s+(sess.distance_km||0);},0);
+    if(isCutback)totalKm=Math.round(totalKm*0.8);
+    weeks.push({
+      week:w,
+      phase:phase.name,
+      label:isCutback?'Recovery Week':phase.label,
+      focus:isCutback?'Cutback week — reduce volume by 20%, keep quality. Let your body adapt and recover.':phase.focus,
+      totalKm:Math.round(totalKm*10)/10,
+      sessions:weekSessions
+    });
+  }
+
+  return{
+    summary:buildSummary(goalText,level,daysPerWeek,totalWeeks,paces,parkrun,longDay,peakLongRun),
+    paceGuide:paces,
+    totalWeeks:totalWeeks,
+    goal:goalText,
+    keyPrinciples:buildPrinciples(goalType,level,daysPerWeek,parkrun),
+    weeks:weeks
+  };
+}
+
+function calcPaces(easyPace,target,goalType,level){
+  // Parse easy pace mm:ss to seconds/km
+  var easySec=0;
+  if(easyPace){
+    var parts=easyPace.split(':');
+    easySec=parseInt(parts[0])*60+(parseInt(parts[1])||0);
+  } else if(target){
+    // Estimate from target time
+    var tparts=target.split(':');
+    var tsecs=0;
+    var distances={'5K':5,'10K':10,'Half Marathon':21.0975,'Marathon':42.195};
+    var dist=distances[goalType]||10;
+    if(tparts.length===3)tsecs=parseInt(tparts[0])*3600+parseInt(tparts[1])*60+parseInt(tparts[2]);
+    else if(tparts.length===2)tsecs=parseInt(tparts[0])*60+parseInt(tparts[1]);
+    var racePaceSec=tsecs/dist;
+    easySec=Math.round(racePaceSec*1.25);
+  } else {
+    // Default by level
+    var defaults={beginner:420,intermediate:360,advanced:310};
+    easySec=defaults[level]||380;
+  }
+
+  function fmt(s){var m=Math.floor(s/60);var sec=Math.round(s%60);return m+':'+(sec<10?'0':'')+sec+'/km';}
+
+  var steadySec=Math.round(easySec*0.94);
+  var tempoSec=Math.round(easySec*0.87);
+  var intervalSec=Math.round(easySec*0.82);
+  var goalDists={'5K':5,'10K':10,'Half Marathon':21.0975,'Marathon':42.195};
+  var goalDist=goalDists[goalType]||10;
+  var goalPaceSec;
+  if(target){
+    var tp=target.split(':');
+    var ts=0;
+    if(tp.length===3)ts=parseInt(tp[0])*3600+parseInt(tp[1])*60+parseInt(tp[2]);
+    else if(tp.length===2)ts=parseInt(tp[0])*60+parseInt(tp[1]);
+    goalPaceSec=ts/goalDist;
+  } else {
+    goalPaceSec=Math.round(easySec*0.90);
+  }
+
+  return{easy:fmt(easySec),steady:fmt(steadySec),tempo:fmt(tempoSec),intervals:fmt(intervalSec),goalPace:fmt(goalPaceSec),
+    easySec:easySec,steadySec:steadySec,tempoSec:tempoSec,intervalSec:intervalSec,goalPaceSec:goalPaceSec};
+}
+
+function buildPhases(totalWeeks){
+  var base=Math.ceil(totalWeeks*0.3);
+  var build=Math.ceil(totalWeeks*0.3);
+  var peak=Math.ceil(totalWeeks*0.25);
+  var taper=totalWeeks-(base+build+peak);
+  if(taper<1)taper=1;
+  return [
+    {name:'Base',label:'Aerobic Foundation',focus:'Building your aerobic base with easy mileage and introduction of structured quality work.',start:1,end:base},
+    {name:'Build',label:'Endurance Build',focus:'Increasing mileage and introducing tempo and threshold work to build race-specific fitness.',start:base+1,end:base+build},
+    {name:'Peak',label:'Peak Training',focus:'Highest training load with goal pace work. This is where race fitness is consolidated.',start:base+build+1,end:base+build+peak},
+    {name:'Taper',label:'Taper & Race Prep',focus:'Reduce volume, maintain sharpness. Arrive at race day feeling fresh and confident.',start:base+build+peak+1,end:totalWeeks}
+  ];
+}
+
+function getPhase(phases,week){
+  for(var i=0;i<phases.length;i++){if(week>=phases[i].start&&week<=phases[i].end)return phases[i];}
+  return phases[phases.length-1];
+}
+
+function getPeakLongRun(goalType,level){
+  var targets={
+    '5K':{beginner:8,intermediate:10,advanced:12},
+    '10K':{beginner:12,intermediate:14,advanced:16},
+    'Half Marathon':{beginner:16,intermediate:18,advanced:21},
+    'Marathon':{beginner:28,intermediate:32,advanced:35},
+    'Custom':{beginner:12,intermediate:16,advanced:20}
+  };
+  var g=targets[goalType]||targets['Custom'];
+  return g[level]||g['intermediate'];
+}
+
+function buildWeekSessions(week,totalWeeks,phase,isCutback,daysPerWeek,preferredDays,longDay,parkrun,goalType,level,paces,peakLongRun){
+  var allDays=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var sessions=[];
+
+  // Determine which days to use
+  var useDays=[];
+  if(preferredDays&&preferredDays.length>=daysPerWeek){
+    useDays=preferredDays.slice(0,daysPerWeek).sort(function(a,b){return allDays.indexOf(a)-allDays.indexOf(b);});
+  } else {
+    useDays=allDays.slice(0,daysPerWeek);
+  }
+
+  // Ensure long run day is in list
+  if(longDay&&useDays.indexOf(longDay)===-1){
+    useDays[useDays.length-1]=longDay;
+    useDays.sort(function(a,b){return allDays.indexOf(a)-allDays.indexOf(b);});
+  }
+
+  // Progress 0-1
+  var prog=week/totalWeeks;
+  var cutbackMult=isCutback?0.8:1.0;
+
+  // Long run distance - build progressively
+  var longRunKm;
+  var peakWeek=Math.round(totalWeeks*0.75);
+  if(week<=peakWeek){
+    var startLong=goalType==='Marathon'?12:goalType==='Half Marathon'?8:goalType==='10K'?6:5;
+    longRunKm=Math.round((startLong+(peakLongRun-startLong)*(week/peakWeek))*cutbackMult);
+  } else {
+    // Taper - reduce from peak
+    var taperProg=(week-peakWeek)/(totalWeeks-peakWeek);
+    longRunKm=Math.round(peakLongRun*(1-taperProg*0.4)*cutbackMult);
+  }
+  longRunKm=Math.max(longRunKm,4);
+
+  // Quality session types - rotate each week
+  var qualityTypes=['intervals','tempo','intervals','fartlek','tempo','intervals','hills','tempo','progression','intervals','tempo','intervals'];
+  var qualityType=qualityTypes[(week-1)%qualityTypes.length];
+  if(isCutback)qualityType='tempo'; // easier quality on cutback
+  if(phase.name==='Peak'&&!isCutback)qualityType=['intervals','goalPace','intervals','tempo'][(week%4)];
+
+  // Assign session types to days
+  // Long run always on preferred day
+  var longIdx=useDays.indexOf(longDay);
+  if(longIdx===-1)longIdx=useDays.length-1;
+
+  useDays.forEach(function(day,i){
+    var sess;
+    if(i===longIdx){
+      sess=makeLongRun(day,week,totalWeeks,phase,longRunKm,paces,goalType,cutbackMult);
+    } else if(parkrun&&day==='Sat'&&i!==longIdx){
+      sess=makeParkrun(day,week,totalWeeks,paces);
+    } else {
+      // Assign quality or easy
+      var hardDays=useDays.filter(function(d,j){return j!==longIdx&&(parkrun?d!=='Sat':true);});
+      var hardCount=daysPerWeek>=5?2:1;
+      var hardDayIndices=[];
+      // Place quality sessions away from long run and each other
+      var lIdx=useDays.indexOf(longDay!=null?longDay:useDays[longIdx]);
+      useDays.forEach(function(d,j){
+        if(j!==longIdx&&!(parkrun&&d==='Sat')){
+          var distFromLong=Math.abs(j-longIdx);
+          if(distFromLong>=2&&hardDayIndices.length<hardCount)hardDayIndices.push(j);
+        }
+      });
+      if(hardDayIndices.length<hardCount){
+        useDays.forEach(function(d,j){
+          if(j!==longIdx&&!(parkrun&&d==='Sat')&&hardDayIndices.indexOf(j)===-1&&hardDayIndices.length<hardCount)hardDayIndices.push(j);
+        });
+      }
+
+      if(hardDayIndices.indexOf(i)!==-1){
+        sess=makeQuality(day,week,qualityType,phase,paces,goalType,level,cutbackMult);
+      } else {
+        sess=makeEasyRun(day,week,phase,paces,level,cutbackMult,daysPerWeek);
+      }
+    }
+    sessions.push(sess);
+  });
+
+  return sessions;
+}
+
+function makeLongRun(day,week,totalWeeks,phase,km,paces,goalType,cutbackMult){
+  var desc='';
+  if(phase.name==='Peak'&&!cutbackMult===0.8){
+    var goalKm=Math.round(km*0.3);
+    desc=km+'km long run: '+Math.round(km*0.3)+'km easy warm-up at '+paces.easy+', '+Math.round(km*0.4)+'km at '+paces.steady+', '+Math.round(km*0.2)+'km at goal pace ('+paces.goalPace+'), '+Math.round(km*0.1)+'km easy cool-down. Build into goal pace — do not start fast.';
+  } else if(phase.name==='Taper'){
+    desc=km+'km easy relaxed long run at '+paces.easy+'. Shorter than peak — keep effort easy. Focus on feeling fresh and confident heading into race week.';
+  } else {
+    desc=km+'km easy long run at '+paces.easy+'. Fully conversational throughout. This is your most important session of the week — do not rush it. If pace drifts, that is fine.';
+  }
+  return{day:day,type:'Long Run',distance_km:km,pace_zone:'Easy ('+paces.easy+')',description:desc,icon:'🌿',training_purpose:'Endurance development and aerobic adaptation'};
+}
+
+function makeParkrun(day,week,totalWeeks,paces){
+  var efforts=[
+    {effort:'easy aerobic',desc:'5km easy aerobic parkrun at '+paces.easy+'. Run relaxed and enjoy it — this is not a race today. Focus on consistent easy effort throughout.',purpose:'Aerobic base and community running'},
+    {effort:'easy aerobic',desc:'5km easy aerobic parkrun at '+paces.easy+'. Keep it fully conversational — treat it as a social easy run. No racing today.',purpose:'Active recovery and aerobic base'},
+    {effort:'easy aerobic',desc:'5km easy aerobic parkrun at '+paces.easy+'. Easy effort throughout. Do not be tempted to race — save energy for your quality sessions this week.',purpose:'Aerobic maintenance'},
+    {effort:'controlled tempo',desc:'5km controlled tempo parkrun at '+paces.tempo+'. Comfortably hard effort — 7/10 perceived effort. Not a sprint but purposefully quick. Even splits throughout.',purpose:'Lactate threshold development'},
+    {effort:'progression',desc:'5km progression parkrun: first 2km at '+paces.steady+', middle 2km at '+paces.tempo+', final 1km at goal pace ('+paces.goalPace+'). Finish feeling strong.',purpose:'Negative split practice and race pace exposure'},
+    {effort:'progression',desc:'5km progression parkrun: start at '+paces.easy+' and gradually build each km. Final km should feel like race effort. Good practice for pacing strategy.',purpose:'Pace control and progression running'},
+    {effort:'progression',desc:'5km parkrun with strong finish: first 3km at steady pace ('+paces.steady+'), last 2km at goal pace ('+paces.goalPace+'). Controlled throughout — finish feeling like you have more.',purpose:'Race pace conditioning'},
+    {effort:'easy cutback',desc:'5km easy recovery parkrun at '+paces.easy+'. Cutback week — keep this fully easy. No racing, no tempo effort. Just enjoy an easy 5km.',purpose:'Active recovery during cutback week'},
+    {effort:'race pace',desc:'5km parkrun at goal pace ('+paces.goalPace+'). Race this one. Warm up 1km easy before the start, then run at your target 5K effort. Good feedback on current fitness.',purpose:'Race pace practice and fitness assessment'},
+    {effort:'race pace',desc:'5km parkrun at goal pace ('+paces.goalPace+') or slightly faster. Push for a strong performance — this should feel like a proper race effort.',purpose:'VO2max stimulus and race confidence'},
+    {effort:'race pace',desc:'5km parkrun at goal pace ('+paces.goalPace+'). Final hard parkrun before taper — race it fully. Use this as a confidence marker.',purpose:'Final race-pace stimulus before taper'},
+    {effort:'relaxed sharp',desc:'5km parkrun at relaxed race pace. During taper — run quick but not exhausting. Should feel controlled and sharp, not draining. 85% effort maximum.',purpose:'Taper activation — maintain sharpness without fatigue'}
+  ];
+  var idx=Math.min(week-1,efforts.length-1);
+  var e=efforts[idx];
+  return{day:day,type:'parkrun 5K',distance_km:5,pace_zone:e.effort+' ('+paces.easy+')',description:e.desc,icon:'🏅',training_purpose:e.purpose};
+}
+
+function makeQuality(day,week,type,phase,paces,goalType,level,cutbackMult){
+  var mult=cutbackMult;
+  if(type==='intervals'){
+    var reps=Math.min(3+Math.floor(week/2),8);
+    var repDist=1;
+    var warmCool=2;
+    var total=Math.round((warmCool*2+reps*repDist*1.5)*mult*10)/10;
+    var desc=total+'km total: 2km easy warm-up at '+paces.easy+', '+reps+'x1km at '+paces.intervals+' with 90s jog recovery between each rep, 2km easy cool-down. Run each rep at the same effort — do not go out too fast on early reps.';
+    return{day:day,type:'Intervals',distance_km:total,pace_zone:'VO2max ('+paces.intervals+')',description:desc,icon:'⚡',training_purpose:'VO2max development and running economy'};
+  } else if(type==='tempo'){
+    var tempoDist=Math.round(Math.min(4+week*0.3,10)*mult*10)/10;
+    var total2=Math.round((tempoDist+4)*mult*10)/10;
+    var desc2=total2+'km total: 2km easy warm-up at '+paces.easy+', '+tempoDist+'km tempo at '+paces.tempo+' (comfortably hard — 7/10 effort, can speak only a few words), 2km easy cool-down. Even effort throughout the tempo section.';
+    return{day:day,type:'Tempo Run',distance_km:total2,pace_zone:'Tempo ('+paces.tempo+')',description:desc2,icon:'🔥',training_purpose:'Lactate threshold development and race pace economy'};
+  } else if(type==='fartlek'){
+    var fkDist=Math.round(8*mult*10)/10;
+    var desc3=fkDist+'km fartlek run: start with 2km easy at '+paces.easy+', then alternate 1 min fast ('+paces.intervals+') / 1 min easy ('+paces.easy+') for 15-20 mins, finish 2km easy. Unstructured and fun — run by feel.';
+    return{day:day,type:'Fartlek',distance_km:fkDist,pace_zone:'Mixed effort',description:desc3,icon:'🎲',training_purpose:'Speed development in an unstructured, enjoyable format'};
+  } else if(type==='hills'){
+    var hDist=Math.round(7*mult*10)/10;
+    var desc4=hDist+'km hill session: 2km easy warm-up, 8x60-second hill repeats at hard effort (90% effort up, jog down recovery), 2km easy cool-down. Hills build strength and power without the impact of track intervals.';
+    return{day:day,type:'Hill Repeats',distance_km:hDist,pace_zone:'Hard effort (hills)',description:desc4,icon:'🏔',training_purpose:'Running strength, power and neuromuscular development'};
+  } else if(type==='progression'){
+    var pDist=Math.round(8*mult*10)/10;
+    var desc5=pDist+'km progression run: first 3km at '+paces.easy+', middle 3km at '+paces.steady+', final 2km at '+paces.tempo+'. Start easy and build — the last km should feel comfortably hard.';
+    return{day:day,type:'Progression Run',distance_km:pDist,pace_zone:'Easy to Tempo',description:desc5,icon:'📈',training_purpose:'Teaches pace control and running strong on tired legs'};
+  } else if(type==='goalPace'){
+    var gpDist=Math.round(9*mult*10)/10;
+    var desc6=gpDist+'km goal pace session: 2km easy warm-up at '+paces.easy+', 5km at goal race pace ('+paces.goalPace+'), 2km easy cool-down. This is what race day will feel like — get comfortable at this pace.';
+    return{day:day,type:'Goal Pace Run',distance_km:gpDist,pace_zone:'Goal pace ('+paces.goalPace+')',description:desc6,icon:'🎯',training_purpose:'Race pace conditioning and mental preparation'};
+  }
+  return makeEasyRun(day,week,phase,paces,'intermediate',mult,3);
+}
+
+function makeEasyRun(day,week,phase,paces,level,cutbackMult,daysPerWeek){
+  var baseDist=daysPerWeek>=5?7:6;
+  var dist=Math.round((baseDist+week*0.15)*cutbackMult*10)/10;
+  dist=Math.max(4,Math.min(dist,12));
+  var desc=dist+'km easy run at '+paces.easy+'. Keep effort fully conversational throughout — if you cannot speak in full sentences, slow down. This aerobic base work supports all your quality sessions.';
+  if(phase.name==='Taper'){
+    dist=Math.max(4,Math.round(dist*0.7*10)/10);
+    desc=dist+'km easy run at '+paces.easy+'. Taper week — keep this short and easy. Legs should feel fresh. Do not be tempted to push.';
+  }
+  return{day:day,type:'Easy Run',distance_km:dist,pace_zone:'Easy ('+paces.easy+')',description:desc,icon:'🏃',training_purpose:'Aerobic base building and active recovery'};
+}
+
+function buildPrinciples(goalType,level,daysPerWeek,parkrun){
+  var p=[
+    '80/20 rule: '+Math.round(daysPerWeek*0.8)+' of your '+daysPerWeek+' weekly sessions are easy effort — this is intentional and essential for adaptation',
+    'Progressive overload with max 10% weekly mileage increase keeps injury risk low while building fitness consistently',
+    'Every 4th week is a cutback week — reduced volume lets your body absorb the training load before building again',
+    goalType==='Marathon'?'Long runs build to '+( level==='beginner'?'28':'level'==='intermediate'?'32':'35')+'km peak — the foundation of marathon fitness':
+    goalType==='Half Marathon'?'Long runs build progressively to your peak distance — the most important session of each week':
+    'Quality sessions rotate between intervals, tempo and other formats — variety prevents adaptation and keeps training engaging'
+  ];
+  if(parkrun)p[3]='parkrun every Saturday is periodised — effort varies each week from easy aerobic to race pace, building race fitness without overloading recovery';
+  return p;
+}
+
+function buildSummary(goalText,level,daysPerWeek,totalWeeks,paces,parkrun,longDay,peakLongRun){
+  return level.charAt(0).toUpperCase()+level.slice(1)+' runner targeting '+goalText+': this '+totalWeeks+'-week plan follows a Base-Build-Peak-Taper structure training '+daysPerWeek+' days per week. Your easy pace is '+paces.easy+' and your tempo pace is '+paces.tempo+'. Long runs on '+longDay+'s build progressively to a peak of '+peakLongRun+'km before a 2-week taper. Quality sessions rotate between intervals, tempo, fartlek and progression runs — never the same workout twice in a row.'+(parkrun?' parkrun every Saturday is built in with periodised effort — not max effort every week.':'');
+}
+
+
+function renderPlan(plan){
+  document.getElementById('plan-summary').textContent=plan.summary;
+  const weeksEl=document.getElementById('plan-weeks');
+  let html='';
+
+  // Pace guide
+  if(plan.paceGuide){
+    const pg=plan.paceGuide;
+    html+=`<div style="background:white;border-radius:14px;border:1px solid var(--sage-100);padding:14px 16px;margin-bottom:12px;">
+      <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--text-dark);margin-bottom:10px;">Your Pace Guide</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${pg.easy?`<div style="background:var(--sage-50);border-radius:8px;padding:8px 10px;"><div style="font-size:10px;color:var(--text-mid);">Easy</div><div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;">${pg.easy}</div></div>`:''}
+        ${pg.steady?`<div style="background:var(--sage-50);border-radius:8px;padding:8px 10px;"><div style="font-size:10px;color:var(--text-mid);">Steady</div><div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;">${pg.steady}</div></div>`:''}
+        ${pg.tempo?`<div style="background:var(--sage-50);border-radius:8px;padding:8px 10px;"><div style="font-size:10px;color:var(--text-mid);">Tempo</div><div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;">${pg.tempo}</div></div>`:''}
+        ${pg.intervals?`<div style="background:var(--sage-50);border-radius:8px;padding:8px 10px;"><div style="font-size:10px;color:var(--text-mid);">Intervals</div><div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;">${pg.intervals}</div></div>`:''}
+        ${pg.goalPace?`<div style="background:var(--sage-100);border-radius:8px;padding:8px 10px;grid-column:span 2;"><div style="font-size:10px;color:var(--text-mid);">Goal Race Pace</div><div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--sage-600);font-weight:500;">${pg.goalPace}</div></div>`:''}
+      </div>
+    </div>`;
+  }
+
+  // Key principles
+  if(plan.keyPrinciples&&plan.keyPrinciples.length){
+    html+=`<div style="background:white;border-radius:14px;border:1px solid var(--sage-100);padding:14px 16px;margin-bottom:12px;">
+      <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--text-dark);margin-bottom:10px;">Key Training Principles</div>
+      ${plan.keyPrinciples.map(p=>`<div style="display:flex;gap:8px;margin-bottom:6px;font-size:13px;color:var(--text-dark);line-height:1.5;"><span style="color:var(--sage-400);flex-shrink:0;font-weight:600;">✓</span>${p}</div>`).join('')}
+    </div>`;
+  }
+
+  // Phase colour map
+  const phaseColour={'Base':'var(--sage-500)','Build':'var(--sage-600)','Peak':'var(--sage-700)','Taper':'var(--sage-800)'};
+
+  // Weeks
+  html+=plan.weeks.map(w=>{
+    const hdr=phaseColour[w.phase]||'var(--sage-500)';
+    return `<div style="background:white;border-radius:14px;border:1px solid var(--sage-100);overflow:hidden;box-shadow:0 2px 8px rgba(45,82,45,0.05);">
+      <div style="background:${hdr};padding:12px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:'DM Serif Display',serif;font-size:16px;color:white;">Week ${w.week}</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            ${w.totalKm?`<span style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.7);">${w.totalKm}km</span>`:''}
+            <span style="font-family:'Inter',sans-serif;font-size:10px;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:1px;font-weight:500;">${w.label||w.phase||''}</span>
+          </div>
+        </div>
+        ${w.focus?`<div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.4;">${w.focus}</div>`:''}
+      </div>
+      ${w.sessions.map(s=>`
+        <div style="padding:13px 16px;border-bottom:1px solid var(--sage-50);display:flex;gap:12px;align-items:flex-start;">
+          <div style="font-size:20px;flex-shrink:0;margin-top:1px;">${s.icon||'🏃'}</div>
+          <div style="flex:1;">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap;">
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sage-500);text-transform:uppercase;letter-spacing:1px;font-weight:600;">${s.day}</span>
+              <span style="background:var(--sage-100);color:var(--sage-600);font-size:11px;padding:2px 8px;border-radius:6px;font-family:'Inter',sans-serif;font-weight:500;">${s.type}</span>
+              ${s.distance_km?`<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-mid);">${s.distance_km}km</span>`:''}
+            </div>
+            ${s.pace_zone?`<div style="font-size:11px;color:var(--sage-500);margin-bottom:4px;font-family:'DM Mono',monospace;">${s.pace_zone}</div>`:''}
+            <div style="font-size:13px;color:var(--text-dark);line-height:1.6;">${s.description}</div>
+            ${s.training_purpose?`<div style="font-size:11px;color:var(--sage-400);margin-top:4px;font-style:italic;">${s.training_purpose}</div>`:''}
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+
+  weeksEl.innerHTML=html;
+}
+
+function savePlan(){
+  showToast('Plan saved! 🌿');
+}
+
+// Load saved plan if exists
+function loadSavedPlan(){
+  try{
+    const saved=localStorage.getItem('sofie_training_plan');
+    if(saved){
+      // Plan exists — show option to view
+    }
+  }catch(e){}
+}
+
+// ── RUN TRACKING ──
+let runState={active:false,paused:false,startTime:null,elapsed:0,distance:0,coords:[],watchId:null,timerInterval:null,targetPace:null,lastPos:null,lastSpeechTime:0,elevGain:0,lastAlt:null,splits:[],lastSplitDist:0,recentPaces:[]};
+let map,routeLine,posMarker,accuracyCircle;
+
+function updatePaceDisplay(){
+  const d=parseFloat(document.getElementById('target-dist').value),t=parseFloat(document.getElementById('target-time').value);
+  document.getElementById('pace-preview-val').textContent=(d>0&&t>0)?formatPace((t*60)/d):'-- : --';
+}
+
+function startRun(){
+  const dist=parseFloat(document.getElementById('target-dist').value)||null;
+  const time=parseFloat(document.getElementById('target-time').value)||null;
+  runState={active:true,paused:false,startTime:Date.now(),elapsed:0,distance:0,coords:[],watchId:null,timerInterval:null,targetPace:(dist&&time)?(time*60)/dist:null,lastPos:null,lastSpeechTime:0,elevGain:0,lastAlt:null,splits:[],lastSplitDist:0,recentPaces:[]};
+  showScreen('running');
+  document.getElementById('splits-section').style.display='none';
+  document.getElementById('splits-list').innerHTML='';
+  setTimeout(()=>initRunMap(),150);
+  startTimer();startGPS();
+}
+
+function initRunMap(){
+  if(map){try{map.remove();}catch(e){}map=null;posMarker=null;accuracyCircle=null;}
+  map=L.map('map',{zoomControl:false,attributionControl:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+  routeLine=L.polyline([],{color:'#6fa06f',weight:5,opacity:0.9}).addTo(map);
+  map.setView([50.8225,-0.1372],15);
+}
+
+function startGPS(){
+  if(!navigator.geolocation){showToast('GPS not supported');return;}
+  runState.watchId=navigator.geolocation.watchPosition(onGPS,onGPSErr,{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
+}
+
+function onGPS(pos){
+  const{latitude:lat,longitude:lng,accuracy,altitude}=pos.coords;
+  const dot=document.getElementById('gps-dot'),lbl=document.getElementById('gps-label');
+  if(accuracy<15){dot.style.background='#5ab55a';lbl.textContent='GPS locked';}
+  else if(accuracy<40){dot.style.background='#5ab55a';lbl.textContent='GPS ~'+Math.round(accuracy)+'m';}
+  else{dot.style.background='var(--sage-500)';lbl.textContent='Weak signal';}
+  if(!runState.active||runState.paused){if(map)map.setView([lat,lng],16);return;}
+  if(accuracy>50)return;
+  const latlng=[lat,lng];
+  if(altitude!==null&&altitude!==undefined&&runState.lastAlt!==null){const diff=altitude-runState.lastAlt;if(diff>1){runState.elevGain+=diff;document.getElementById('run-elev').innerHTML=Math.round(runState.elevGain)+'<span style="font-size:11px;color:var(--sage-400)">m</span>';}}
+  if(altitude!==null&&altitude!==undefined)runState.lastAlt=altitude;
+  if(runState.lastPos){
+    const d=haversine(runState.lastPos,latlng);
+    if(d>0.004&&d<0.5){runState.distance+=d;runState.coords.push(latlng);routeLine.addLatLng(latlng);runState.recentPaces.push({dist:d,t:runState.elapsed});if(runState.recentPaces.length>8)runState.recentPaces.shift();checkKmSplit();}
+  }else{runState.coords.push(latlng);routeLine.addLatLng(latlng);map.setView(latlng,16);document.getElementById('coach-cue').textContent='GPS locked — go!';}
+  runState.lastPos=latlng;
+  if(posMarker)posMarker.setLatLng(latlng);else posMarker=L.circleMarker(latlng,{radius:9,fillColor:'#a0c0a0',color:'#fff',weight:2.5,fillOpacity:1}).addTo(map);
+  if(accuracyCircle)accuracyCircle.setLatLng(latlng).setRadius(accuracy);else accuracyCircle=L.circle(latlng,{radius:accuracy,color:'#6fa06f',fillColor:'#6fa06f',fillOpacity:0.08,weight:1}).addTo(map);
+  map.panTo(latlng);updateRunUI();
+}
+function onGPSErr(err){if(err.code===1)showToast('Allow location access in Chrome settings');}
+
+function checkKmSplit(){
+  const d=runState.distance,next=runState.splits.length+1;
+  if(d>=next){
+    const avgPace=runState.elapsed/d,num=runState.splits.length+1;
+    runState.splits.push({km:num,pace:avgPace});runState.lastSplitDist=d;
+    document.getElementById('splits-section').style.display='block';
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border-radius:8px;padding:5px 10px;';
+    row.innerHTML=`<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--sage-400)">KM ${num}</span><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--cream);font-weight:500">${formatPace(avgPace)}</span>`;
+    document.getElementById('splits-list').prepend(row);
+    speak(num+' kilometre. '+formatPaceVoice(avgPace)+' per kilometre.',0);
+  }
+}
+
+function startTimer(){
+  runState.timerInterval=setInterval(()=>{
+    if(!runState.paused&&runState.active){runState.elapsed=Math.floor((Date.now()-runState.startTime)/1000);document.getElementById('run-time').textContent=formatTime(runState.elapsed);updateRunUI();}
+  },1000);
+}
+
+function updateRunUI(){
+  const dist=runState.distance;
+  document.getElementById('run-dist').textContent=dist.toFixed(2);
+  if(dist>0.1&&runState.elapsed>0){
+    const avgPace=runState.elapsed/dist;document.getElementById('run-avg-pace').textContent=formatPace(avgPace);
+    let curPace=avgPace;
+    if(runState.recentPaces.length>=2){const rd=runState.recentPaces.reduce((s,p)=>s+p.dist,0),rt=runState.elapsed-runState.recentPaces[0].t;if(rd>0&&rt>0)curPace=rt/rd;}
+    document.getElementById('run-cur-pace').textContent=formatPace(curPace);
+    if(runState.targetPace)updatePaceCoach(avgPace);
+  }
+}
+
+function updatePaceCoach(avgPace){
+  const target=runState.targetPace,diff=avgPace-target;
+  const pct=Math.max(0,Math.min(1,0.5+(diff/target)*1.2));
+  document.getElementById('pace-bar').style.width=(pct*100)+'%';
+  const now=Date.now()/1000,cooldown=28;
+  const cue=document.getElementById('coach-cue'),coach=document.getElementById('pace-coach');
+  if(diff<-18){document.getElementById('pace-bar').style.background='#d4694a';cue.style.color='#d4694a';cue.textContent='⚡ Ease back — too fast';coach.style.borderColor='rgba(212,105,74,0.4)';if(now-runState.lastSpeechTime>cooldown){speak("Too fast, ease back.",0);runState.lastSpeechTime=now;}}
+  else if(diff>18){document.getElementById('pace-bar').style.background='#4a7fc8';cue.style.color='#4a7fc8';cue.textContent='💨 Push harder';coach.style.borderColor='rgba(74,127,200,0.4)';if(now-runState.lastSpeechTime>cooldown){speak("Speed up to hit your target.",0);runState.lastSpeechTime=now;}}
+  else{document.getElementById('pace-bar').style.background='var(--sage-400)';cue.style.color='var(--sage-300)';cue.textContent='✓ Right on target';coach.style.borderColor='rgba(111,160,111,0.35)';}
+}
+
+function togglePause(){
+  runState.paused=!runState.paused;
+  const btn=document.getElementById('pause-btn');
+  if(runState.paused){btn.textContent='▶  Resume';runState.startTime=Date.now()-runState.elapsed*1000;navigator.geolocation.clearWatch(runState.watchId);}
+  else{btn.textContent='⏸  Pause';runState.startTime=Date.now()-runState.elapsed*1000;startGPS();}
+}
+
+function stopRun(){
+  if(runState.watchId)navigator.geolocation.clearWatch(runState.watchId);
+  clearInterval(runState.timerInterval);runState.active=false;
+  const dist=runState.distance,elapsed=runState.elapsed,avgPace=dist>0?elapsed/dist:0,elev=Math.round(runState.elevGain);
+  document.getElementById('sum-dist').textContent=dist.toFixed(2);
+  document.getElementById('sum-time').textContent=formatTime(elapsed);
+  document.getElementById('sum-pace').textContent=formatPace(avgPace);
+  document.getElementById('sum-elev').textContent=elev+'m';
+  document.getElementById('summary-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  const run={date:new Date().toISOString(),distance:dist,elapsed,pace:avgPace,elevGain:elev,splits:runState.splits,coords:runState.coords};
+  runHistory.unshift(run);try{localStorage.setItem('sofie_runs',JSON.stringify(runHistory));}catch(e){}
+  if(posMarker){try{map.removeLayer(posMarker);}catch(e){}posMarker=null;}
+  if(accuracyCircle){try{map.removeLayer(accuracyCircle);}catch(e){}accuracyCircle=null;}
+  showScreen('summary');
+}
+
+const synth=window.speechSynthesis;
+function speak(text,minGap){
+  if(!synth)return;
+  synth.cancel();
+  const u=new SpeechSynthesisUtterance(text);u.rate=0.92;u.pitch=1.05;u.volume=1;
+  const fv=synth.getVoices().find(v=>/female|karen|samantha|victoria|tessa/i.test(v.name));
+  if(fv)u.voice=fv;synth.speak(u);
+}
+function formatPaceVoice(s){const m=Math.floor(s/60),sec=Math.round(s%60);return sec===0?m+' minutes':m+' minutes '+sec+' seconds';}
+
+// ── HOME STATS ──
+function updateHomeStats(){
+  const total=runHistory.length;
+  const totalDist=runHistory.reduce((s,r)=>s+(r.distance||0),0);
+  const paces=runHistory.filter(r=>r.pace>0).map(r=>r.pace);
+  const best=paces.length?Math.min(...paces):0;
+  const weekAgo=Date.now()-7*24*3600*1000;
+  const weekDist=runHistory.filter(r=>new Date(r.date).getTime()>weekAgo).reduce((s,r)=>s+(r.distance||0),0);
+  document.getElementById('home-total-runs').textContent=total;
+  document.getElementById('home-total-dist').innerHTML=totalDist.toFixed(1)+'<span class="stat-unit">km</span>';
+  document.getElementById('home-best-pace').innerHTML=(best>0?formatPace(best):'--')+'<span class="stat-unit">/km</span>';
+  document.getElementById('home-week-dist').innerHTML=weekDist.toFixed(1)+'<span class="stat-unit">km</span>';
+}
+
+// ── MANUAL ENTRY ──
+function showManualEntry(){
+  const modal=document.getElementById('manual-modal');
+  modal.style.display='block';
+  // Set today's date as default
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('m-date').value=today;
+}
+function hideManualEntry(){
+  document.getElementById('manual-modal').style.display='none';
+  ['m-name','m-dist','m-time','m-pace','m-hr','m-cals','m-elev'].forEach(id=>document.getElementById(id).value='');
+}
+function saveManualRun(){
+  const dist=parseFloat(document.getElementById('m-dist').value);
+  if(!dist||dist<=0){showToast('Please enter a distance');return;}
+  const timeStr=document.getElementById('m-time').value.trim();
+  const paceStr=document.getElementById('m-pace').value.trim();
+  const dateVal=document.getElementById('m-date').value;
+  const elapsed=parseSecs(timeStr)||0;
+  const paceSecs=parseSecs(paceStr)||(elapsed>0&&dist>0?elapsed/dist:0);
+  const run={
+    date: dateVal?new Date(dateVal).toISOString():new Date().toISOString(),
+    distance: dist,
+    elapsed: elapsed,
+    pace: paceSecs,
+    elevGain: parseInt(document.getElementById('m-elev').value)||0,
+    avgHR: parseInt(document.getElementById('m-hr').value)||null,
+    calories: parseInt(document.getElementById('m-cals').value)||null,
+    activityName: document.getElementById('m-name').value.trim()||null,
+    splits:[],coords:[],imported:true,manualEntry:true
+  };
+  runHistory.unshift(run);
+  try{localStorage.setItem('sofie_runs',JSON.stringify(runHistory));}catch(e){}
+  hideManualEntry();
+  renderHistory();
+  updateHomeStats();
+  showToast('Run saved! 🌿');
+}
+
+// ── PHOTO IMPORT (AI vision) ──
+async function importPhoto(input){
+  const file=input.files[0];
+  if(!file)return;
+
+  // Show loading
+  const overlay=document.getElementById('photo-loading');
+  overlay.style.display='flex';
+
+  try{
+    // Convert image to base64
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result.split(',')[1]);
+      r.onerror=()=>rej(new Error('Read failed'));
+      r.readAsDataURL(file);
+    });
+
+    const mediaType=file.type||'image/jpeg';
+
+    // Call Claude API with vision
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+            {type:'text',text:`This is a screenshot of a running activity from Garmin Connect or a similar app. Extract all the stats you can see and return ONLY a JSON object with no markdown, no backticks, no explanation. Use this exact format:
+{
+  "date": "ISO date string if visible, otherwise null",
+  "distance_km": number or null,
+  "elapsed_seconds": total seconds or null,
+  "avg_pace_sec_per_km": seconds per km or null,
+  "avg_hr_bpm": number or null,
+  "calories": number or null,
+  "elevation_gain_m": number or null,
+  "activity_name": "name of activity if shown or null"
+}
+For pace like 5:52/km convert to seconds (5*60+52=352). For time like 2:04:40 convert to seconds (2*3600+4*60+40=7480). Return only the JSON.`}
+          ]
+        }]
+      })
+    });
+
+    const data=await response.json();
+    const text=data.content.map(i=>i.text||'').join('');
+    const clean=text.replace(/```json|```/g,'').trim();
+    const stats=JSON.parse(clean);
+
+    // Build run object from extracted stats
+    const run={
+      date: stats.date||new Date().toISOString(),
+      distance: stats.distance_km||0,
+      elapsed: stats.elapsed_seconds||0,
+      pace: stats.avg_pace_sec_per_km||(stats.elapsed_seconds&&stats.distance_km?stats.elapsed_seconds/stats.distance_km:0),
+      elevGain: stats.elevation_gain_m||0,
+      avgHR: stats.avg_hr_bpm||null,
+      calories: stats.calories||null,
+      activityName: stats.activity_name||null,
+      splits:[],
+      coords:[],
+      imported:true,
+      photoImport:true
+    };
+
+    if(!run.distance||run.distance===0){
+      overlay.style.display='none';
+      showToast('Could not read distance from photo');
+      input.value='';
+      return;
+    }
+
+    runHistory.unshift(run);
+    try{localStorage.setItem('sofie_runs',JSON.stringify(runHistory));}catch(err){}
+    input.value='';
+    overlay.style.display='none';
+    renderHistory();
+    updateHomeStats();
+    showToast('Run imported from photo! 🎉');
+
+  }catch(err){
+    overlay.style.display='none';
+    showToast('Could not read photo — try GPX import');
+    input.value='';
+    console.error(err);
+  }
+}
+
+// ── GPX IMPORT ──
+function importGPX(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const parser=new DOMParser();
+      const gpx=parser.parseFromString(e.target.result,'application/xml');
+      const trkpts=Array.from(gpx.querySelectorAll('trkpt'));
+      if(!trkpts.length){showToast('No track points found in GPX');return;}
+
+      const coords=trkpts.map(p=>[parseFloat(p.getAttribute('lat')),parseFloat(p.getAttribute('lon'))]);
+      let distance=0;
+      for(let i=1;i<coords.length;i++)distance+=haversine(coords[i-1],coords[i]);
+
+      const times=trkpts.map(p=>{const t=p.querySelector('time');return t?new Date(t.textContent):null;}).filter(Boolean);
+      let elapsed=0;
+      if(times.length>=2)elapsed=Math.round((times[times.length-1]-times[0])/1000);
+
+      let elevGain=0,lastEle=null;
+      trkpts.forEach(p=>{
+        const ele=p.querySelector('ele');
+        if(ele){const v=parseFloat(ele.textContent);if(lastEle!==null&&v-lastEle>1)elevGain+=v-lastEle;lastEle=parseFloat(ele.textContent);}
+      });
+
+      const metadata=gpx.querySelector('metadata time');
+      const date=metadata?new Date(metadata.textContent).toISOString():(times.length?times[0].toISOString():new Date().toISOString());
+      const avgPace=distance>0&&elapsed>0?elapsed/distance:0;
+
+      // Extract HR if available
+      const hrVals=Array.from(gpx.querySelectorAll('hr,heartrate')).map(h=>parseInt(h.textContent)).filter(v=>v>0);
+      const avgHR=hrVals.length?Math.round(hrVals.reduce((a,b)=>a+b,0)/hrVals.length):null;
+
+      const run={date,distance,elapsed,pace:avgPace,elevGain:Math.round(elevGain),splits:[],coords,imported:true,avgHR};
+      runHistory.unshift(run);
+      try{localStorage.setItem('sofie_runs',JSON.stringify(runHistory));}catch(err){}
+      input.value='';
+      renderHistory();
+      updateHomeStats();
+      showToast('Run imported from Garmin! 🎉');
+    }catch(err){showToast('Could not read GPX file');console.error(err);}
+  };
+  reader.readAsText(file);
+}
+
+// ── HISTORY ──
+function switchHistoryTab(tab){
+  const rl=document.getElementById('history-list');
+  const el=document.getElementById('efforts-list');
+  const ib=document.querySelector('.import-bar');
+  document.getElementById('tab-runs').className='tab-btn'+(tab==='runs'?' active':'');
+  document.getElementById('tab-efforts').className='tab-btn'+(tab==='efforts'?' active':'');
+  if(tab==='runs'){rl.style.display='block';el.style.display='none';ib.style.display='block';}
+  else{rl.style.display='none';el.style.display='block';ib.style.display='none';renderBestEfforts();}
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(!runHistory.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🌿</div><div class="empty-text">No runs yet</div><div class="empty-sub">Import a GPX file from Garmin Connect to see your runs here.</div></div>';
+    return;
+  }
+  el.innerHTML=runHistory.map((r,i)=>`
+    <div class="run-card">
+      <div class="run-card-header">
+        <div class="run-date">${new Date(r.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>
+        <div class="run-badge">${r.imported?'📥 Garmin':new Date(r.date).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="run-card-stats">
+        <div class="run-stat"><div class="run-stat-val">${(r.distance||0).toFixed(2)}</div><div class="run-stat-label">km</div></div>
+        <div class="run-stat"><div class="run-stat-val">${formatTime(r.elapsed||0)}</div><div class="run-stat-label">time</div></div>
+        <div class="run-stat"><div class="run-stat-val">${formatPace(r.pace)}</div><div class="run-stat-label">avg/km</div></div>
+        <div class="run-stat"><div class="run-stat-val">${r.elevGain||0}m</div><div class="run-stat-label">elev</div></div>
+      </div>
+      ${r.avgHR||r.calories||r.activityName?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--sage-100);font-family:'DM Mono',monospace;font-size:11px;color:var(--text-mid);display:flex;gap:12px;flex-wrap:wrap;">
+        ${r.activityName?`<span>🏃 ${r.activityName}</span>`:''}
+        ${r.avgHR?`<span>❤️ ${r.avgHR} bpm</span>`:''}
+        ${r.calories?`<span>🔥 ${r.calories} cal</span>`:''}
+      </div>`:''}
+      <button onclick="deleteRun(${i})" style="margin-top:8px;background:none;border:none;font-size:11px;color:#c8a0a0;cursor:pointer;padding:2px 0;">✕ Delete</button>
+    </div>`).join('');
+}
+
+function deleteRun(i){
+  runHistory.splice(i,1);
+  try{localStorage.setItem('sofie_runs',JSON.stringify(runHistory));}catch(e){}
+  renderHistory();updateHomeStats();showToast('Run deleted');
+}
+
+// ── BEST EFFORTS ──
+const EFFORTS=[
+  {label:'1K',km:1},{label:'5K',km:5},{label:'10K',km:10},
+  {label:'15K',km:15},{label:'Half Marathon',km:21.0975},
+  {label:'30K',km:30},{label:'Marathon',km:42.195}
+];
+
+function renderBestEfforts(){
+  const el=document.getElementById('efforts-list');
+
+  // For each distance, find best time from ALL runs (including hardcoded PRs)
+  const rows=EFFORTS.map(d=>{
+    const eligible=runHistory.filter(r=>r.distance>=d.km&&r.elapsed>0);
+    if(!eligible.length)return{label:d.label,time:null,date:null,isNewPR:false,isPR:false};
+
+    // Find best estimated time
+    const best=eligible.reduce((b,r)=>{
+      const est=(r.elapsed/r.distance)*d.km;
+      return(!b||est<b.est)?{est,date:r.date,personalRecord:r.personalRecord,imported:r.imported}:b;
+    },null);
+
+    // Check if there's a non-hardcoded run that beats the hardcoded PR
+    const liveRuns=eligible.filter(r=>!r.personalRecord);
+    const hardcodedBest=eligible.filter(r=>r.personalRecord).reduce((b,r)=>{
+      const est=(r.elapsed/r.distance)*d.km;
+      return(!b||est<b.est)?est:b;
+    },null);
+    const liveBest=liveRuns.reduce((b,r)=>{
+      const est=(r.elapsed/r.distance)*d.km;
+      return(!b||est<b.est)?{est,date:r.date}:b;
+    },null);
+
+    const isNewPR=liveBest&&(!hardcodedBest||liveBest.est<hardcodedBest);
+    const isPR=best.personalRecord;
+
+    return{label:d.label,time:best.est,date:best.date,isNewPR,isPR};
+  });
+
+  el.innerHTML=`<div style="padding:0 0 8px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text-mid);font-weight:500;">Updates automatically when you log a faster run</div>`
+  +rows.map(r=>`
+    <div class="effort-row${r.isNewPR?' new-pr':''}">
+      <div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <div class="effort-name">${r.label}</div>
+          ${r.isNewPR?'<span class="effort-pr-badge">NEW PR 🎉</span>':''}
+        </div>
+        ${r.date?`<div class="effort-date">${new Date(r.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>`:''}
+      </div>
+      <div class="effort-time${r.time?'':' empty'}">${r.time?formatEffortTime(r.time):'--'}</div>
+    </div>`).join('');
+}
+
+// ── PACE CALCULATOR ──
+let paceMode=0;
+
+function setPaceMode(m){
+  paceMode=m;
+  [0,1,2].forEach(i=>{
+    const btn=document.getElementById('mode-btn-'+i);
+    const panel=document.getElementById('pace-mode-'+i);
+    if(i===m){
+      btn.style.background='var(--sage-500)';btn.style.color='white';btn.style.border='none';
+      panel.style.display='block';
+    } else {
+      btn.style.background='white';btn.style.color='var(--text-mid)';btn.style.border='1px solid var(--sage-200)';
+      panel.style.display='none';
+    }
+  });
+  // Update result label
+  const labels=['Pace per km','Finish Time','Distance (km)'];
+  const subs=['min:sec per km','h:mm:ss','kilometres'];
+  document.getElementById('pace-result-label').textContent=labels[m];
+  document.getElementById('pace-result-sub').textContent=subs[m];
+  document.getElementById('pace-result').textContent='--:--';
+}
+
+function setPaceRace(km){
+  document.querySelectorAll('.race-btn').forEach(b=>b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  // Set distance field for current mode
+  if(paceMode===0) document.getElementById('p0-dist').value=km;
+  else if(paceMode===1) document.getElementById('p1-dist').value=km;
+  // Recalculate
+  if(paceMode===0) calcMode0();
+  else if(paceMode===1) calcMode1();
+}
+
+// Mode 0: distance + time → pace
+function calcMode0(){
+  const dist=parseFloat(document.getElementById('p0-dist').value);
+  const time=parseSecs(document.getElementById('p0-time').value);
+  if(dist>0&&time>0){
+    const pace=time/dist; // seconds per km
+    document.getElementById('pace-result').textContent=secsToMMSS(pace);
+  } else {
+    document.getElementById('pace-result').textContent='--:--';
+  }
+}
+
+// Mode 1: distance + pace → finish time
+function calcMode1(){
+  const dist=parseFloat(document.getElementById('p1-dist').value);
+  const pace=parseSecs(document.getElementById('p1-pace').value);
+  if(dist>0&&pace>0){
+    const totalSecs=dist*pace;
+    document.getElementById('pace-result').textContent=secsToHHMMSS(totalSecs);
+  } else {
+    document.getElementById('pace-result').textContent='--:--';
+  }
+}
+
+// Mode 2: time + pace → distance
+function calcMode2(){
+  const time=parseSecs(document.getElementById('p2-time').value);
+  const pace=parseSecs(document.getElementById('p2-pace').value);
+  if(time>0&&pace>0){
+    const dist=time/pace;
+    document.getElementById('pace-result').textContent=dist.toFixed(2);
+  } else {
+    document.getElementById('pace-result').textContent='--';
+  }
+}
+
+// Parse mm:ss or h:mm:ss into total seconds
+function parseSecs(str){
+  if(!str)return 0;
+  const parts=str.split(':').map(s=>parseInt(s,10)||0);
+  if(parts.length===1)return parts[0];
+  if(parts.length===2)return parts[0]*60+parts[1]; // mm:ss
+  if(parts.length===3)return parts[0]*3600+parts[1]*60+parts[2]; // h:mm:ss
+  return 0;
+}
+
+// Format seconds as mm:ss (for pace)
+function secsToMMSS(s){
+  s=Math.round(s);
+  return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+// Format seconds as h:mm:ss (for finish time)
+function secsToHHMMSS(s){
+  s=Math.round(s);
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  if(h>0)return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+// Auto insert colons for time input h:mm:ss
+function autoColonTime(id){
+  const el=document.getElementById(id);
+  let v=el.value.replace(/[^0-9]/g,'');
+  if(v.length>6)v=v.slice(0,6);
+  // Format as h:mm:ss (single digit hours)
+  if(v.length<=1)el.value=v;
+  else if(v.length<=3)el.value=v.slice(0,1)+':'+v.slice(1);
+  else if(v.length<=5)el.value=v.slice(0,1)+':'+v.slice(1,3)+':'+v.slice(3);
+  else el.value=v.slice(0,1)+':'+v.slice(1,3)+':'+v.slice(3,5);
+}
+
+// Auto insert colon for pace mm:ss
+function autoColonPace(id){
+  const el=document.getElementById(id);
+  let v=el.value.replace(/[^0-9]/g,'');
+  if(v.length>4)v=v.slice(0,4);
+  if(v.length<=2)el.value=v;
+  else el.value=v.slice(0,2)+':'+v.slice(2);
+}
+
+function clearPaceCalc(){
+  ['p0-dist','p0-time','p1-dist','p1-pace','p2-time','p2-pace'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  document.getElementById('pace-result').textContent='--:--';
+  document.querySelectorAll('.race-btn').forEach(b=>b.classList.remove('selected'));
+}
+
+// ── PLAN MAP ──
+let routeLayer=null;
+
+function initPlanMap(){
+  if(planIsInit){setTimeout(()=>{if(planMap)planMap.invalidateSize();},100);return;}
+  planIsInit=true;
+  setTimeout(()=>{
+    const c=document.getElementById('plan-map');
+    if(!c||c.offsetHeight===0){planIsInit=false;setTimeout(initPlanMap,300);return;}
+    planMap=L.map('plan-map',{zoomControl:true,attributionControl:false});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(planMap);
+    planPolyline=L.polyline([],{color:'#4d7d4d',weight:4,opacity:0.8}).addTo(planMap);
+    planMap.setView([50.8225,-0.1372],14);
+    planMap.invalidateSize();
+    if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{planMap.setView([p.coords.latitude,p.coords.longitude],15);planMap.invalidateSize();},()=>{});
+    planMap.on('click',e=>{
+      const latlng=e.latlng;planCoords.push(latlng);
+      const isFirst=planCoords.length===1;
+      const m=L.circleMarker(latlng,{radius:isFirst?10:7,fillColor:isFirst?'#3a6b3a':'#6fa06f',color:'#fff',weight:2,fillOpacity:1}).addTo(planMap);
+      m._pi=planCoords.length-1;
+      m.on('click',ev=>{L.DomEvent.stopPropagation(ev);removePlanAt(m._pi);});
+      planMarkers.push(m);
+      if(planCoords.length>=2) fetchRoute();
+      else updatePlanStats();
+    });
+  },350);
+}
+
+async function fetchRoute(){
+  if(planCoords.length<2){planPolyline.setLatLngs([]);updatePlanStats();return;}
+  // Use OSRM public API — foot profile for running
+  const coords=planCoords.map(c=>`${c.lng},${c.lat}`).join(';');
+  const url=`https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`;
+  try{
+    document.getElementById('plan-dist').textContent='…';
+    const res=await fetch(url);
+    const data=await res.json();
+    if(data.code==='Ok'&&data.routes.length){
+      const route=data.routes[0];
+      const coords=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+      planPolyline.setLatLngs(coords);
+      planMap.fitBounds(planPolyline.getBounds(),{padding:[20,20]});
+      const distKm=route.distance/1000;
+      document.getElementById('plan-dist').textContent=distKm.toFixed(2);
+      document.getElementById('plan-waypoints').textContent=planCoords.length;
+      document.getElementById('plan-est-time').textContent=Math.round(distKm*6)+'m';
+    } else {
+      // Fall back to straight line if routing fails
+      planPolyline.setLatLngs(planCoords);
+      updatePlanStats();
+      showToast('Road routing unavailable — showing straight line');
+    }
+  }catch(e){
+    planPolyline.setLatLngs(planCoords);
+    updatePlanStats();
+  }
+}
+
+function removePlanAt(idx){
+  planMap.removeLayer(planMarkers[idx]);
+  planMarkers.splice(idx,1);planCoords.splice(idx,1);
+  planMarkers.forEach((m,i)=>m._pi=i);
+  if(planCoords.length>=2) fetchRoute();
+  else{planPolyline.setLatLngs([]);updatePlanStats();}
+}
+
+function undoPlanPoint(){
+  if(!planCoords.length)return;
+  planMap.removeLayer(planMarkers.pop());planCoords.pop();
+  if(planCoords.length>=2) fetchRoute();
+  else{planPolyline.setLatLngs([]);updatePlanStats();}
+}
+
+function outAndBack(){
+  if(planCoords.length<2){showToast('Add at least 2 points first');return;}
+  [...planCoords].reverse().slice(1).forEach(latlng=>{
+    planCoords.push(latlng);
+    const m=L.circleMarker(latlng,{radius:7,fillColor:'#6fa06f',color:'#fff',weight:2,fillOpacity:1}).addTo(planMap);
+    m._pi=planCoords.length-1;m.on('click',ev=>{L.DomEvent.stopPropagation(ev);removePlanAt(m._pi);});
+    planMarkers.push(m);
+  });
+  fetchRoute();showToast('Out & back route created!');
+}
+
+function clearPlan(){
+  planMarkers.forEach(m=>planMap.removeLayer(m));
+  planMarkers=[];planCoords=[];
+  planPolyline.setLatLngs([]);updatePlanStats();
+}
+
+function updatePlanStats(){
+  const d=calcLineDistance(planCoords);
+  document.getElementById('plan-dist').textContent=d.toFixed(2);
+  document.getElementById('plan-waypoints').textContent=planCoords.length;
+  document.getElementById('plan-est-time').textContent=d>0?Math.round(d*6)+'m':'--';
+}
+
+// ── UTILS ──
+function formatTime(s){
+  s=Math.round(s||0);
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  if(h>0)return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+function formatPace(s){if(!s||s<=0||!isFinite(s)||s>1800)return '--:--';return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.round(s%60)).padStart(2,'0');}
+function formatEffortTime(secs){
+  secs=Math.round(secs);
+  const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+  if(h>0)return`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function haversine(a,b){
+  const R=6371,dLat=(b[0]-a[0])*Math.PI/180,dLon=(b[1]-a[1])*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function calcLineDistance(coords){let d=0;for(let i=1;i<coords.length;i++)d+=haversine([coords[i-1].lat,coords[i-1].lng],[coords[i].lat,coords[i].lng]);return d;}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+
+
+updateHomeStats();
+
+// PRs handled by profile system
+// Always ensure Sofie's personal records are present
+const PR_DATA=[
+  {date:'2020-12-02T09:00:00.000Z',distance:5,elapsed:25*60+14,name:'5K PR'},
+  {date:'2020-11-10T09:00:00.000Z',distance:10,elapsed:49*60+32,name:'10K PR'},
+  {date:'2020-11-13T09:00:00.000Z',distance:21.0975,elapsed:1*3600+45*60+59,name:'Half Marathon PR'},
+  {date:'2023-02-26T09:00:00.000Z',distance:24.43,elapsed:0,name:'Longest Run'},
+];
+
+function ensurePersonalRecords(){
+  PR_DATA.forEach(pr=>{
+    const exists=runHistory.find(r=>r.personalRecord&&r.activityName===pr.name);
+    if(!exists){
+      runHistory.push({
+        date:pr.date,distance:pr.distance,elapsed:pr.elapsed,
+        pace:pr.elapsed>0?pr.elapsed/pr.distance:0,
+        elevGain:0,avgHR:null,calories:null,activityName:pr.name,
+        splits:[],coords:[],imported:true,personalRecord:true
+      });
+    }
+  });
+  runHistory.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  try{localStorage.setItem('sofie_runs',JSON.stringify(runHistory));}catch(e){}
+  updateHomeStats();
+}
+// PRs loaded per profile
+// ════════════════════════════════════
+// PROFILE SYSTEM
+// ════════════════════════════════════
+
+</script>
+<script>
+
+// ═══════════════════════════════
+// PROFILE SYSTEM - plain globals
+// ═══════════════════════════════
+var PS_COLS=['#4d7d4d','#3a6b3a','#6fa06f','#2d522d','#8faa5a'];
+var PS_PRS=[
+  {date:'2020-12-02T09:00:00Z',dist:5,el:1514,nm:'5K PR'},
+  {date:'2020-11-10T09:00:00Z',dist:10,el:2972,nm:'10K PR'},
+  {date:'2020-11-13T09:00:00Z',dist:21.0975,el:6359,nm:'Half Marathon PR'},
+  {date:'2023-02-26T09:00:00Z',dist:24.43,el:0,nm:'Longest Run'}
+];
+var PS_EDIT=false;
+var PS_DEL_ID=null;
+
+function psLg(k,d){try{var v=localStorage.getItem(k);return v!=null?v:d;}catch(e){return d;}}
+function psLs(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function psLjg(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function psLjs(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function psLr(k){try{localStorage.removeItem(k);}catch(e){}}
+
+function psGetProfiles(){
+  var p=psLjg('ps_profs',null);
+  if(!p){
+    p=[{id:'sofie',nm:'Sofie',col:'#4d7d4d'},{id:'joe',nm:'Joe',col:'#3a6b3a'},{id:'cat',nm:'Cat',col:'#6fa06f'}];
+    psLjs('ps_profs',p);
+  }
+  return p;
+}
+function psSaveProfiles(p){psLjs('ps_profs',p);}
+
+function psGetRuns(id){
+  if(id==='sofie'){
+    var r=psLjg('sofie_runs',[]);
+    PS_PRS.forEach(function(pr){
+      if(!r.find(function(x){return x.personalRecord&&x.activityName===pr.nm;})){
+        r.push({date:pr.date,distance:pr.dist,elapsed:pr.el,pace:pr.el>0?pr.el/pr.dist:0,
+          elevGain:0,avgHR:null,calories:null,activityName:pr.nm,
+          splits:[],coords:[],imported:true,personalRecord:true});
+      }
+    });
+    r.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+    psLjs('sofie_runs',r);
+    return r;
+  }
+  return psLjg('ps_runs_'+id,[]);
+}
+function psSaveRuns(id,r){
+  if(id==='sofie') psLjs('sofie_runs',r);
+  else psLjs('ps_runs_'+id,r);
+}
+function psGetCur(){return psLg('ps_cur','');}
+function psSetCur(id){psLs('ps_cur',id||'');}
+function psGetKeep(){return psLg('ps_keep','false')==='true';}
+function psSetKeep(v){psLs('ps_keep',v?'true':'false');}
+function psGetUnits(id){return psLg('ps_units_'+id,'km');}
+function psSetUnits(id,v){psLs('ps_units_'+id,v);}
+
+function psShow(){
+  PS_EDIT=false;
+  psRender();
+  var el=document.getElementById('psel');
+  if(el) el.style.display='flex';
+}
+
+function psHide(){
+  var el=document.getElementById('psel');
+  if(el) el.style.display='none';
+  var a=document.getElementById('psel-add-ov');
+  if(a) a.style.display='none';
+  var d=document.getElementById('psel-del-ov');
+  if(d) d.style.display='none';
+}
+
+function psRender(){
+  var profs=psGetProfiles();
+  var grid=document.getElementById('psel-grid');
+  var lbl=document.getElementById('psel-edit-lbl');
+  if(lbl) lbl.textContent=PS_EDIT?'Done':'Edit';
+
+  var html=profs.map(function(p){
+    var runs=psGetRuns(p.id);
+    var units=psGetUnits(p.id);
+    var real=runs.filter(function(r){return r.distance>0;});
+    var total=real.reduce(function(s,r){return s+(r.distance||0);},0);
+    if(units==='miles') total=total*0.621371;
+    var dist=(total>0?total.toFixed(1):'0')+' '+units;
+    return '<div class="psel-card" data-id="'+p.id+'">'
+      +'<button class="psel-del-btn" data-id="'+p.id+'" data-nm="'+p.nm+'">'
+      +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none">'
+      +'<polyline points="3 6 5 6 21 6" stroke="#d4694a" stroke-width="2.5" stroke-linecap="round"/>'
+      +'<path d="M19 6l-1 14H6L5 6" stroke="#d4694a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+      +'<path d="M10 11v6M14 11v6" stroke="#d4694a" stroke-width="2.5" stroke-linecap="round"/>'
+      +'</svg></button>'
+      +'<div class="psel-av" style="background:'+p.col+'">'+p.nm[0].toUpperCase()+'</div>'
+      +'<div class="psel-nm">'+p.nm+'</div>'
+      +'<div class="psel-km">'+dist+'</div>'
+      +'</div>';
+  }).join('');
+
+  html+='<div class="psel-add" id="psel-add-tile">'
+    +'<div class="psel-add-ring">'
+    +'<svg width="24" height="24" viewBox="0 0 24 24" fill="none">'
+    +'<line x1="12" y1="5" x2="12" y2="19" stroke="#6fa06f" stroke-width="2.5" stroke-linecap="round"/>'
+    +'<line x1="5" y1="12" x2="19" y2="12" stroke="#6fa06f" stroke-width="2.5" stroke-linecap="round"/>'
+    +'</svg></div>'
+    +'<div class="psel-add-lbl">Add Profile</div>'
+    +'</div>';
+
+  grid.innerHTML=html;
+  grid.className='psel-grid'+(PS_EDIT?' psel-edit-mode':'');
+
+  // Wire clicks
+  grid.onclick=function(e){
+    var del=e.target.closest('.psel-del-btn');
+    if(del){
+      e.stopPropagation();
+      PS_DEL_ID=del.dataset.id;
+      document.getElementById('psel-del-nm').textContent=del.dataset.nm;
+      document.getElementById('psel-del-ov').style.display='flex';
+      return;
+    }
+    var card=e.target.closest('.psel-card');
+    if(card&&!PS_EDIT){
+      psLogin(card.dataset.id);
+      return;
+    }
+    if(e.target.closest('.psel-add')){
+      psOpenAdd();
+    }
+  };
+
+  var tog=document.getElementById('psel-keep-tog');
+  if(tog){
+    if(psGetKeep()) tog.classList.add('on');
+    else tog.classList.remove('on');
+  }
+}
+
+function psLogin(id){
+  psSetCur(id);
+  runHistory=psGetRuns(id);
+  psHide();
+  showScreen('home');
+  updateHomeStats();
+}
+
+function pselToggleEdit(){PS_EDIT=!PS_EDIT;psRender();}
+
+function pselToggleKeep(){
+  var v=!psGetKeep();
+  psSetKeep(v);
+  var t=document.getElementById('psel-keep-tog');
+  if(t){if(v)t.classList.add('on');else t.classList.remove('on');}
+}
+
+function psOpenAdd(){
+  document.getElementById('psel-add-ov').style.display='flex';
+  setTimeout(function(){
+    var i=document.getElementById('psel-name-inp');
+    if(i) i.focus();
+  },150);
+}
+
+function pselCloseAdd(){
+  document.getElementById('psel-add-ov').style.display='none';
+  document.getElementById('psel-name-inp').value='';
+}
+
+function pselCreate(){
+  var nm=document.getElementById('psel-name-inp').value.trim();
+  if(!nm){showToast('Please enter a name');return;}
+  var profs=psGetProfiles();
+  profs.push({id:'u'+Date.now(),nm:nm,col:PS_COLS[profs.length%PS_COLS.length]});
+  psSaveProfiles(profs);
+  pselCloseAdd();
+  psRender();
+  showToast(nm+' added!');
+}
+
+function pselCancelDel(){
+  PS_DEL_ID=null;
+  document.getElementById('psel-del-ov').style.display='none';
+}
+
+function pselConfirmDel(){
+  if(!PS_DEL_ID) return;
+  var profs=psGetProfiles().filter(function(p){return p.id!==PS_DEL_ID;});
+  psSaveProfiles(profs);
+  if(PS_DEL_ID==='sofie') psLr('sofie_runs');
+  else psLr('ps_runs_'+PS_DEL_ID);
+  psLr('ps_units_'+PS_DEL_ID);
+  if(psGetCur()===PS_DEL_ID){psSetCur('');psSetKeep(false);}
+  PS_DEL_ID=null;
+  document.getElementById('psel-del-ov').style.display='none';
+  psRender();
+  showToast('Profile deleted');
+}
+
+function toggleSettings(){
+  var d=document.getElementById('settings-dropdown');
+  if(d) d.style.display=d.style.display==='block'?'none':'block';
+}
+
+function switchProfile(){
+  toggleSettings();
+  if(psGetCur()) psSaveRuns(psGetCur(),runHistory||[]);
+  psShow();
+}
+
+function logOut(){
+  toggleSettings();
+  if(psGetCur()) psSaveRuns(psGetCur(),runHistory||[]);
+  psSetCur('');
+  psSetKeep(false);
+  psShow();
+}
+
+function toggleUnits(e){
+  e.stopPropagation();
+  var id=psGetCur();
+  var cur=psGetUnits(id);
+  var nxt=cur==='km'?'miles':'km';
+  psSetUnits(id,nxt);
+  var b=document.getElementById('units-btn');
+  if(b) b.textContent=nxt.toUpperCase();
+  showToast('Units: '+nxt);
+}
+
+document.addEventListener('click',function(e){
+  var d=document.getElementById('settings-dropdown');
+  var btn=document.getElementById('settings-btn');
+  if(d&&btn&&d.style.display==='block'&&!d.contains(e.target)&&!btn.contains(e.target)){
+    d.style.display='none';
+  }
+});
+
+// Start app
+(function(){
+  if(psGetKeep()){
+    var id=psGetCur();
+    if(id&&psGetProfiles().find(function(p){return p.id===id;})){
+      psLogin(id);
+      return;
+    }
+  }
+  psShow();
+})();
+
+</script>
+</body>
+</html>
